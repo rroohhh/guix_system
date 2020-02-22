@@ -16,6 +16,7 @@
 (use-modules (vup hwinfo))
 (use-modules (vup ip_addr))
 (use-modules (vup i3-gaps))
+(use-modules (vup telegram))
 
 (use-modules (srfi srfi-1)) ; fold-right ((
 (use-modules (ice-9 rdelim))
@@ -789,11 +790,11 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
      #:provides '(quasselclient)
      #:command `(,#$(file-append quassel "/bin/quasselclient"))))
 
-(define (pidgin-service display)
+(define (telegram-service display)
    (make-simple-forkexec-display-service display
-     #:docstring "Pidgin"
-     #:provides '(pidgin)
-     #:command `(,#$(file-append pidgin "/bin/pidgin"))))
+     #:docstring "Telegram"
+     #:provides '(telegram)
+     #:command `(,#$(file-append telegram-desktop "/bin/telegram-desktop"))))
 
 (define (dunst-service display)
    (make-simple-forkexec-display-service display
@@ -828,7 +829,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 			 emacsclient-service
 			 tmux-service
 			 quasselclient-service
-			 pidgin-service
+			 telegram-service
 			 dunst-service
 			 )))
 
@@ -848,7 +849,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (start 'emacsd)
 (start 'emacsclient:0)
 (start 'quasselclient:0)
-(start 'pidgin:0)
+(start 'telegram:0)
 )))
 
 (define bash_profile 
@@ -1187,15 +1188,21 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
     (symlink-file-home "/data/robin/log/shepherd.log" "log/shepherd.log")
     (symlink-file-home "/data/robin/.ssh/id_ed25519.pub" ".ssh/id_ed25519.pub")
     (symlink-file-home "/data/robin/.ssh/id_ed25519" ".ssh/id_ed25519")
+    (symlink-file-home "/data/.ssh/known_hosts" ".ssh/known_hosts")
     ; (symlink-file-home "/data/robin/.config/pavucontrol.ini" ".config/pavucontrol.ini") ; TODO(robin): figure out why this is not working
     (symlink-file-home "/data/.config/quassel-irc.org" ".config/quassel-irc.org") ; SECRETS, TODO(robin): figure out what to do about quassel config, it is quite shitty (and semi binary?)
+    (symlink-file-home "/data/.config/horizon" ".config/horizon") ; TODO(robin): maybe generate the color scheme from here?
     (symlink-file-home "/data/robin/.config/kicad" ".config/kicad") ; TODO(robin) what
     (symlink-file-home "/data/robin/.purple" ".purple") ; SECRETS, TODO(robin): figure out what to do about	this one
     (symlink-file-home "/data/projects/dotfiles-gentoo/.emacs.d" ".emacs.d") ; TODO(robin): figure out this one
     (symlink-file-home "/data/projects/dotfiles-gentoo/.clang-format" ".clang-format") ; TODO(robin): figure out this one
     (symlink-file-home "/data/robin/.texlive2018" ".texlive2018")
     (symlink-file-home "/data/robin/.Xilinx" ".Xilinx")
-    (symlink-file-home "/data/.cargo" ".cargo")
+    (symlink-file-home "/data/.config/configstore" ".config/configstore")  ; fuck it
+    (symlink-file-home "/data/.cargo" ".cargo")  ; fuck it
+    (symlink-file-home "/data/.fonts" ".fonts")  ; fuck it
+    (symlink-file-home "/data/.npm" ".npm")      ; fuck it
+    (symlink-file-home "/data/.ghidra" ".ghidra")      ; fuck it
     (symlink-file-home "/data/texmf" "texmf") ; TODO(robin): rework this to static files in the store? (or build packages for the few missing things)
     (symlink-file-home "/data/robin/.config/chromium" ".config/chromium")))
 ;;  #:guix-config-symlink "/data/robin/.config/guix")
