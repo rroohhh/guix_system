@@ -1,6 +1,6 @@
 (use-modules (vup patches))
 
-(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns)
+(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization)
 
 (use-modules (vup rust-nightly))
 (use-modules (vup fpga))
@@ -8,6 +8,10 @@
 (use-modules (vup lld))
 (use-modules (vup biber-old))
 (use-modules (vup pidgin-libnotify))
+(use-modules (vup horizon))
+(use-modules (vup unrar))
+
+
 
 (packages->manifest
  (list
@@ -34,6 +38,8 @@
   xdot
   lm-sensors
   kicad
+  kicad-library
+  kicad-symbols
   fastboot
   adb
   rust-nightly
@@ -46,6 +52,30 @@
   qpdf
   openmpi
   wine64-staging
+  horizon
+  baobab
+  btrfs-progs
+  cloc
+  cryptsetup
+  cutter
+  gimp
+  gnuplot
+  hunspell
+  hunspell-dict-en-us
+  igt-gpu-tools
+  man-pages
+  meld
+  mumble
+  netcat
+  node
+  parallel
+  radare2
+  rawtherapee
+  sfml
+  socat
+  unrar
+  valgrind
+  wget
 
   ; mail
   notmuch
@@ -64,6 +94,7 @@
   python-pyvcd
   python-jinja2
   yosys-git
+  nextpnr
 
   ; python
   python-pandas
@@ -72,6 +103,12 @@
   python-matplotlib
   python-quadpy
   python-fitsio
+  python-colorhash
+  python-pint
+  python-requests
+  python-ruamel.yaml
+  python-toml
+  python-xmltodict
 
 
   ; compression
