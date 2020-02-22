@@ -13,9 +13,8 @@
 (use-service-modules desktop avahi dbus xorg shepherd mcron docker)
 (use-modules ((gnu services networking) #:prefix guix-))
 
-(use-modules (nonfree packages linux))
-
 (use-modules (vup ripgrep))
+(use-modules (vup linux))
 (use-modules (vup exa))
 (use-modules (vup caps2esc))
 (use-modules (vup hwinfo))
@@ -155,7 +154,7 @@ maximum extent possible.")
   "Return a shepherd service for iwd"
   (list (shepherd-service
 		 (documentation "Run iwd")
-		 (provision '(iwd))
+		 (provision '(iwd networking))
 		 (requirement
 		  `(user-processes dbus-system loopback))
 		 (start #~(make-forkexec-constructor
@@ -368,12 +367,12 @@ a network connection manager."))))
                                                        (string-append #$isync "/bin/mbsync -a; " #$notmuch "/bin/notmuch new")
                                                        #:user "robin")))))
 
-                          (service connman-service-type
-                                   (connman-configuration
-									(connman connman-with-iwd)
-                                    (disable-vpn? #t)
-									(use-iwd? #t)))
-                          (service guix-wpa-supplicant-service-type)
+;                          (service connman-service-type
+;                                   (connman-configuration
+;									(connman connman-with-iwd)
+;                                    (disable-vpn? #t)
+;									(use-iwd? #t)))
+;                          (service guix-wpa-supplicant-service-type)
                           (service iwd-service-type))
                     %base-services))
 
