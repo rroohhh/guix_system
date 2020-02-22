@@ -1,13 +1,12 @@
 (use-modules (vup patches))
 
-(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization)
+(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java)
 
 (use-modules (vup rust-nightly))
 (use-modules (vup fpga))
 (use-modules (vup python-xyz))
 (use-modules (vup lld))
 (use-modules (vup biber-old))
-(use-modules (vup pidgin-libnotify))
 (use-modules (vup horizon))
 (use-modules (vup unrar))
 
@@ -76,6 +75,13 @@
   unrar
   valgrind
   wget
+  gnu-make
+  scrot
+  youtube-dl
+  ffmpeg
+
+  ; java
+  (list icedtea "jdk")
 
   ; mail
   notmuch
@@ -93,10 +99,14 @@
   python-bitarray
   python-pyvcd
   python-jinja2
+  python-nmigen
+  python-nmigen-boards
   yosys-git
   nextpnr
 
   ; python
+  python-chipsec
+  python-varname
   python-pandas
   python-tqdm
   python-scipy
@@ -118,9 +128,7 @@
 
 
   ; IM
-  pidgin
-  pidgin-libnotify
-  telegram-purple
+  qtox
   quassel
 
   ; desktop shit
