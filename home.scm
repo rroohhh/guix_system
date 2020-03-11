@@ -12,8 +12,8 @@
 (use-modules (guix gexp))
 
 (use-modules (vup home i3))
-(use-modules (vup alacritty))
 (use-modules (vup hwinfo))
+(use-modules (vup xkeylogger))
 (use-modules (vup ip_addr))
 (use-modules (vup i3-gaps))
 (use-modules (vup telegram))
@@ -104,7 +104,6 @@ window:
 scrolling:
   history: 10000
   multiplier: 3
-  faux_multiplier: 3
   auto_scroll: false
 
 tabspaces: 8
@@ -298,7 +297,7 @@ key_bindings:
   (computed-file "bashrc"
     #~(with-output-to-file #$output
         (lambda _
-		  (set-port-encoding! (current-output-port) "UTF-8")
+          (set-port-encoding! (current-output-port) "UTF-8")
           (format #t "~a" (apply string-append (list "export SHELL
 
 if [[ $- != *i* ]]; then
@@ -329,16 +328,16 @@ function __prompt_ps1 {
   __prompt_wrapper "$host" "${a_fg}${a_bg}${space}" "${space}${a_sep_fg}" && is_prompt_empty=0
 
   if [ "$(id -u)" -eq 0 ]; then
-	  [ $is_prompt_empty -eq 1 ] && slice_prefix="${d_fg}${d_bg}${space}" || slice_prefix="${d_bg}${sep}${b_fg}${b_bg}${space}"
-	  __prompt_wrapper "ROOT" "$slice_prefix" "${space}${d_sep_fg}" && is_prompt_empty=0
+      [ $is_prompt_empty -eq 1 ] && slice_prefix="${d_fg}${d_bg}${space}" || slice_prefix="${d_bg}${sep}${b_fg}${b_bg}${space}"
+      __prompt_wrapper "ROOT" "$slice_prefix" "${space}${d_sep_fg}" && is_prompt_empty=0
   fi
 
   [ $is_prompt_empty -eq 1 ] && slice_prefix="${c_fg}${c_bg}${space}" || slice_prefix="${c_bg}${sep}${c_fg}${space}"
   __prompt_wrapper "$(__prompt_cwd)" "$slice_prefix" "${space}${c_sep_fg}" && is_prompt_empty=0
 
   if [ -n "${GUIX_ENVIRONMENT}" ]; then
-	  [ $is_prompt_empty -eq 1 ] && slice_prefix="${b_fg}${b_bg}${space}" || slice_prefix="${b_bg}${sep}${b_fg}${b_bg}${space}"
-	  __prompt_wrapper "ENV" "$slice_prefix" "${space}${b_sep_fg}" && is_prompt_empty=0
+      [ $is_prompt_empty -eq 1 ] && slice_prefix="${b_fg}${b_bg}${space}" || slice_prefix="${b_bg}${sep}${b_fg}${b_bg}${space}"
+      __prompt_wrapper "ENV" "$slice_prefix" "${space}${b_sep_fg}" && is_prompt_empty=0
   fi
 
 
@@ -442,7 +441,7 @@ function __prompt {
 }
 
 if [[ ! "$PROMPT_COMMAND" == *__prompt* ]]; then
-	PROMPT_COMMAND='__prompt;'
+    PROMPT_COMMAND='__prompt;'
 fi
 )EOF
 
@@ -489,7 +488,7 @@ alias vi=$EDITOR
  (srfi srfi-26))
 
 (define startx #$(xorg-start-command (xorg-configuration 
-				       (keyboard-layout (keyboard-layout "de" "vup")))))
+                       (keyboard-layout (keyboard-layout "de" "vup")))))
 
 (define (environment-excursion env-thunk body-thunk)
   (let ((old-env (environ)))
@@ -714,7 +713,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
     (let ((pid (primitive-fork)))
       (if (zero? pid)
           (zero? (status:exit-val (apply system* command)))
-	  pid))))
+      pid))))
 
 (define* (pulseaudio-service display)
   (make-display-service 
@@ -722,8 +721,8 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
     #:docstring "pulseaudio"
     #:provides '(pulseaudio)
     #:start (lambda _
-	      (with-environment-excursion (environ* display (format #f "/tmp/pa-~a" (getuid)))
-					  (run-command (list #$(file-append pulseaudio "/bin/pulseaudio") "--start"))))
+          (with-environment-excursion (environ* display (format #f "/tmp/pa-~a" (getuid)))
+                      (run-command (list #$(file-append pulseaudio "/bin/pulseaudio") "--start"))))
     #:stop (make-kill-destructor)))
 
 (define* (xorg-command #:key (display ":0") (vt "vt1"))
@@ -765,6 +764,12 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 ;;     #:docstring "Stumpwm"
 ;;     #:provides '(stumpwm wm)
 ;;     #:command '("stumpwm")))
+
+(define (xkeylogger-service display)
+  (make-simple-forkexec-display-service display
+    #:docstring "xkeylogger"
+    #:provides '(xkeylogger)
+    #:command `(,#$(file-append xkeylogger "/bin/xkeylogger") "/data/projects/keyboard/xkeylogger.log")))
 
 (define (i3-service display)
   (make-simple-forkexec-display-service display
@@ -824,20 +829,21 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
   (map (cut <> display)
        (list xorg-service*
              i3-service
-			 pulseaudio-service
-			 dbus
-			 emacsclient-service
-			 tmux-service
-			 quasselclient-service
-			 telegram-service
-			 dunst-service
-			 )))
+             pulseaudio-service
+             dbus
+             emacsclient-service
+             tmux-service
+             quasselclient-service
+             telegram-service
+             dunst-service
+             xkeylogger-service
+             )))
 
 (apply register-services
        (append 
-	 (list
-	   emacs-daemon)
-	 (make-display-services ":0")))
+     (list
+       emacs-daemon)
+     (make-display-services ":0")))
 
 (action 'shepherd 'daemonize)
 (start 'x:0)
@@ -850,6 +856,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (start 'emacsclient:0)
 (start 'quasselclient:0)
 (start 'telegram:0)
+(start 'xkeylogger:0)
 )))
 
 (define bash_profile 
@@ -877,7 +884,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
              "for_window [ title=\"^org.anbox.*\" ] border none floating enable"
              "default_border pixel 3"))
          (bar (i3-bar-configuration
-			      (bar-command (file-append i3-gaps "/bin/i3bar"))
+                  (bar-command (file-append i3-gaps "/bin/i3bar"))
                   (position "top") 
                   (workspace-buttons #t) 
                   (status-command (file-append i3blocks "/bin/i3blocks")) 
@@ -921,7 +928,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
          (smart-borders #t)
          (key-bindings
            `(((,mod "f") "fullscreen toggle")
-             ((,mod "Return") ("exec " ,(file-append rust-alacritty_0_3_3 "/bin/alacritty")))
+             ((,mod "Return") ("exec " ,(file-append alacritty "/bin/alacritty")))
              ((,mod "Shift" "q") "kill")
              ((,mod "d") ("exec " ,(file-append rofi "/bin/rofi") " -show run"))
              ((,mod ,left) "focus left")
@@ -984,7 +991,7 @@ echo ''
 [[ \"${CHARGE}\" -lt '25' ]] && exit 33
 
 exit 0"))))
-	  (use-modules (guix build utils))
+      (use-modules (guix build utils))
           (copy-file script #$output)
           (chmod #$output #o755))
     #:options
@@ -998,13 +1005,13 @@ exit 0"))))
   use=xterm-256color,
   setb24=\\E[48;2;%p1%{65536}%/%d;%p1%{256}%/%{255}%&%d;%p1%{255}%&%dm,
   setf24=\\E[38;2;%p1%{65536}%/%d;%p1%{256}%/%{255}%&%d;%p1%{255}%&%dm,"))
-			(out (string-append #$output "/.terminfo")))
-		(use-modules (guix build utils))
-		(mkdir-p out)
-		(apply system* (list #$(file-append ncurses "/bin/tic") "-x" "-o" out terminfo-src)))
-	#:options
-	'(#:local-build? #t
-	  #:modules ((guix build utils)))))
+            (out (string-append #$output "/.terminfo")))
+        (use-modules (guix build utils))
+        (mkdir-p out)
+        (apply system* (list #$(file-append ncurses "/bin/tic") "-x" "-o" out terminfo-src)))
+    #:options
+    '(#:local-build? #t
+      #:modules ((guix build utils)))))
 
 (define i3blocks-config
   (computed-file 
@@ -1015,7 +1022,7 @@ exit 0"))))
           (set-port-encoding! (current-output-port) "UTF-8")    ;; shitty hack for unicode to work
           (format #t "~a" 
             (string-append 
-	      #$@(list "separator=false
+          #$@(list "separator=false
 separator_block_width=5
 [wireless]
 label=  
@@ -1041,32 +1048,32 @@ interval=1
 
 (define (rasi-bool->string bool)
   (if bool
-	  "true"
-	  "false"))
+      "true"
+      "false"))
 
 (define (rasi-symbol->string symbol)
   (let*
-	  ((str (symbol->string symbol)))
-	(if (string=? (string-take-right str 1) "?") (string-drop-right str 1) str)))
+      ((str (symbol->string symbol)))
+    (if (string=? (string-take-right str 1) "?") (string-drop-right str 1) str)))
 
 (define (rasi-config->string config)
   (match config
-		 ((config-name config)
-		  (let*
-			  ((config-value
-				(match config
-					   ((? string?) (format #f "\"~a\"" config))
-					   ((? exact-integer?) (format #f "~a" config))
-					   ((? boolean?) (rasi-bool->string config))
-					   ((? list?) (format #f "\"~a\"" (string-join config ","))))))
-			(format #f "~a: ~a;\n" (rasi-symbol->string config-name) config-value)))))
+         ((config-name config)
+          (let*
+              ((config-value
+                (match config
+                       ((? string?) (format #f "\"~a\"" config))
+                       ((? exact-integer?) (format #f "~a" config))
+                       ((? boolean?) (rasi-bool->string config))
+                       ((? list?) (format #f "\"~a\"" (string-join config ","))))))
+            (format #f "~a: ~a;\n" (rasi-symbol->string config-name) config-value)))))
 
 (define (rasi-section->string section)
   (match section
-		 ((section-name configs)
-		  (apply string-append `(,(symbol->string section-name) " {\n"
-								 ,@(map rasi-config->string configs)
-								 "}\n")))))
+         ((section-name configs)
+          (apply string-append `(,(symbol->string section-name) " {\n"
+                                 ,@(map rasi-config->string configs)
+                                 "}\n")))))
 
 (define (rasi->string config)
   (apply string-append (map rasi-section->string config)))
@@ -1075,21 +1082,21 @@ interval=1
   (plain-file
    "rofi-config.rasi"
    (rasi->string
-	`((configuration
-	   ((font "Hack 12")
-		(padding 400)
-		(fixed-num-lines? #f)
-		(show-icons? #t)
-		(eh 2)
-		(parse-hosts? #f)
-		(parse-known-hosts? #t)
-		(hide-scrollbar? #t)
-		(fullscreen? #t)
-		(fake-transparency? #t)
-		(color-normal ("#0000"     ,(theme* fg)      "#0000" "#0000" ,(theme* green)))
-		(color-urgent ("#0000"     ,(theme* red)     "#0000" "#0000" ,(theme* green)))
-		(color-active ("#0000"     ,(theme* magenta) "#0000" "#0000" ,(theme* green)))
-		(color-window ("#cc2f343f" "#0000"         "#0000"))))))))
+    `((configuration
+       ((font "Hack 12")
+        (padding 400)
+        (fixed-num-lines? #f)
+        (show-icons? #t)
+        (eh 2)
+        (parse-hosts? #f)
+        (parse-known-hosts? #t)
+        (hide-scrollbar? #t)
+        (fullscreen? #t)
+        (fake-transparency? #t)
+        (color-normal ("#0000"     ,(theme* fg)      "#0000" "#0000" ,(theme* green)))
+        (color-urgent ("#0000"     ,(theme* red)     "#0000" "#0000" ,(theme* green)))
+        (color-active ("#0000"     ,(theme* magenta) "#0000" "#0000" ,(theme* green)))
+        (color-window ("#cc2f343f" "#0000"         "#0000"))))))))
 
 
 
@@ -1193,7 +1200,7 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
     (symlink-file-home "/data/.config/quassel-irc.org" ".config/quassel-irc.org") ; SECRETS, TODO(robin): figure out what to do about quassel config, it is quite shitty (and semi binary?)
     (symlink-file-home "/data/.config/horizon" ".config/horizon") ; TODO(robin): maybe generate the color scheme from here?
     (symlink-file-home "/data/robin/.config/kicad" ".config/kicad") ; TODO(robin) what
-    (symlink-file-home "/data/robin/.purple" ".purple") ; SECRETS, TODO(robin): figure out what to do about	this one
+    (symlink-file-home "/data/robin/.purple" ".purple") ; SECRETS, TODO(robin): figure out what to do about    this one
     (symlink-file-home "/data/projects/dotfiles-gentoo/.emacs.d" ".emacs.d") ; TODO(robin): figure out this one
     (symlink-file-home "/data/projects/dotfiles-gentoo/.clang-format" ".clang-format") ; TODO(robin): figure out this one
     (symlink-file-home "/data/robin/.texlive2018" ".texlive2018")
@@ -1203,6 +1210,7 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
     (symlink-file-home "/data/.fonts" ".fonts")  ; fuck it
     (symlink-file-home "/data/.npm" ".npm")      ; fuck it
     (symlink-file-home "/data/.ghidra" ".ghidra")      ; fuck it
+    (symlink-file-home "/data/.factorio" ".factorio")      ; fuck it
     (symlink-file-home "/data/texmf" "texmf") ; TODO(robin): rework this to static files in the store? (or build packages for the few missing things)
     (symlink-file-home "/data/robin/.config/chromium" ".config/chromium")))
 ;;  #:guix-config-symlink "/data/robin/.config/guix")

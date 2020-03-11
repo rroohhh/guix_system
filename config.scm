@@ -7,10 +7,10 @@
 (use-modules (guix packages))
 (use-modules (guix records))
 (use-package-modules bootloaders certs wm suckless xorg linux ssh emacs vim version-control mail connman polkit vpn samba admin glib autotools readline documentation pkg-config python tls) ; gnome for nm-applet
-; (use-modules ((gnu packages networking) #:prefix guix-))
+                                        ; (use-modules ((gnu packages networking) #:prefix guix-))
 
 (use-modules (gnu services))
-(use-service-modules desktop avahi dbus xorg shepherd mcron docker)
+(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking)
 (use-modules ((gnu services networking) #:prefix guix-))
 
 (use-modules (vup ripgrep))
@@ -21,16 +21,16 @@
 
 (use-modules (my-tlp))
 
-; (use-modules ((iwd)
-; 			  #:select (iwd-service-type)))
-; (use-modules (iwd))
+                                        ; (use-modules ((iwd)
+                                        ;               #:select (iwd-service-type)))
+                                        ; (use-modules (iwd))
 
 
 (use-modules (srfi srfi-1))
 
 
 
-; no clue why i cant put this in a external file
+                                        ; no clue why i cant put this in a external file
 (use-modules (guix download))
 (use-modules (guix git-download))
 (use-modules (guix build-system gnu))
@@ -41,12 +41,12 @@
     (name "connman")
     (version "1.37")
     (source
-      (origin
-        (method url-fetch)
-        (uri (string-append "mirror://kernel.org/linux/network/connman/"
-                            "connman-" version ".tar.xz"))
-    (sha256
-     (base32 "05kfjiqhqfmbbwc4snnyvi5hc4zxanac62f6gcwaf5mvn0z9pqkc"))))
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://kernel.org/linux/network/connman/"
+                           "connman-" version ".tar.xz"))
+       (sha256
+        (base32 "05kfjiqhqfmbbwc4snnyvi5hc4zxanac62f6gcwaf5mvn0z9pqkc"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags
@@ -153,14 +153,14 @@ maximum extent possible.")
 (define-public (iwd-shepherd-service _)
   "Return a shepherd service for iwd"
   (list (shepherd-service
-		 (documentation "Run iwd")
-		 (provision '(iwd networking))
-		 (requirement
-		  `(user-processes dbus-system loopback))
-		 (start #~(make-forkexec-constructor
-				   (list (string-append #$iwd
-										"/libexec/iwd"))))
-		 (stop #~(make-kill-destructor)))))
+         (documentation "Run iwd")
+         (provision '(iwd networking))
+         (requirement
+          `(user-processes dbus-system loopback))
+         (start #~(make-forkexec-constructor
+                   (list (string-append #$iwd
+                                        "/libexec/iwd"))))
+         (stop #~(make-kill-destructor)))))
 
 
 (define-public iwd-service-type
@@ -169,8 +169,8 @@ maximum extent possible.")
                   (extensions
                    (list (service-extension shepherd-root-service-type
                                             iwd-shepherd-service)
-;                         (service-extension polkit-service-type
-;                                            connman-package)
+                                        ;                         (service-extension polkit-service-type
+                                        ;                                            connman-package)
                          (service-extension dbus-root-service-type
                                             iwd-package)
                          ;; Add connman to the system profile.
@@ -190,7 +190,7 @@ a wpa-supplicant replacemennt."))))
   (disable-vpn? connman-configuration-disable-vpn?
                 (default #f))
   (use-iwd? connman-configuration-use-iwd?
-                (default #f)))
+            (default #f)))
 
 (define-public (connman-activation config)
   (let ((disable-vpn? (connman-configuration-disable-vpn? config)))
@@ -208,9 +208,9 @@ a wpa-supplicant replacemennt."))))
   (and
    (connman-configuration? config)
    (let* ((connman      (connman-configuration-connman config))
-         (disable-vpn? (connman-configuration-disable-vpn? config))
-         (use-iwd? (connman-configuration-use-iwd? config))
-		 (wifi-agent (if use-iwd? 'iwd 'wpa-supplicant)))
+          (disable-vpn? (connman-configuration-disable-vpn? config))
+          (use-iwd? (connman-configuration-use-iwd? config))
+          (wifi-agent (if use-iwd? 'iwd 'wpa-supplicant)))
      (list (shepherd-service
             (documentation "Run Connman")
             (provision '(networking))
@@ -267,6 +267,7 @@ a network connection manager."))))
   (list (shepherd-service
          (documentation "remount root to apply /etc/fstab settings")
          (provision '(root-remount))
+         (one-shot? #t)
          (start #~(make-forkexec-constructor
                    (list (string-append #$util-linux "/bin/mount") "-o" "remount" "/")))
          (stop #~(make-kill-destructor)))))
@@ -292,8 +293,8 @@ a network connection manager."))))
                (keyboard-layout keyboard-layout)))
 
   (setuid-programs (append (list
-			     (file-append hwinfo "/bin/hwinfo"))
-			   %setuid-programs))
+                            (file-append hwinfo "/bin/hwinfo"))
+                           %setuid-programs))
 
   (kernel linux-nonfree)
   (kernel-arguments '("--rootflags=compress=zstd,discard,subvolid=54188,subvol=@guix_root,acl"))
@@ -307,26 +308,26 @@ a network connection manager."))))
 
   (file-systems (append
                  (list ;; (file-system
-                       ;;   (device (uuid "53b1da5a-93fe-4c01-bea0-1876cd164566"))
-                       ;;   (mount-point "/")
-                       ;;   (type "ext4"))
-                       (file-system
-                         (device (file-system-label "main_ssd"))
-                         (mount-point "/")
-                         (type "btrfs")
-                         (options "compress=zstd,discard,subvolid=54188,subvol=@guix_root,acl")
-                         (dependencies mapped-devices))
-;			 (needed-for-boot? #t))
-                       (file-system
-                         (device (file-system-label "main_ssd"))
-                         (mount-point "/data")
-                         (type "btrfs")
-                         (options "compress=zstd,discard,subvolid=259,subvol=@robin,acl")
-                         (dependencies mapped-devices))
-                       (file-system
-                         (device (uuid "41AD-B3AB" 'fat))
-                         (mount-point "/boot/efi")
-                         (type "vfat")))
+                  ;;   (device (uuid "53b1da5a-93fe-4c01-bea0-1876cd164566"))
+                  ;;   (mount-point "/")
+                  ;;   (type "ext4"))
+                  (file-system
+                    (device (file-system-label "main_ssd"))
+                    (mount-point "/")
+                    (type "btrfs")
+                    (options "compress=zstd,discard,subvolid=54188,subvol=@guix_root,acl")
+                    (dependencies mapped-devices))
+                                        ;             (needed-for-boot? #t))
+                  (file-system
+                    (device (file-system-label "main_ssd"))
+                    (mount-point "/data")
+                    (type "btrfs")
+                    (options "compress=zstd,discard,subvolid=259,subvol=@robin,acl")
+                    (dependencies mapped-devices))
+                  (file-system
+                    (device (uuid "41AD-B3AB" 'fat))
+                    (mount-point "/boot/efi")
+                    (type "vfat")))
                  %base-file-systems))
 
   (users (cons (user-account
@@ -346,8 +347,8 @@ a network connection manager."))))
   ;; maybe connman -> done
   ;; maybe remove gdm -> done
   (services (append (list (service caps2esc-service-type)
-			  (service root-remount-service-type)
-			  (service docker-service-type)
+                          (service root-remount-service-type)
+                          (service docker-service-type)
                           (service cups-pk-helper-service-type)
 
                           (service polkit-service-type)
@@ -367,12 +368,13 @@ a network connection manager."))))
                                                        (string-append #$isync "/bin/mbsync -a; " #$notmuch "/bin/notmuch new")
                                                        #:user "robin")))))
 
-;                          (service connman-service-type
-;                                   (connman-configuration
-;									(connman connman-with-iwd)
-;                                    (disable-vpn? #t)
-;									(use-iwd? #t)))
-;                          (service guix-wpa-supplicant-service-type)
+                                        ;                          (service connman-service-type
+                                        ;                                   (connman-configuration
+                                        ;                                    (connman connman-with-iwd)
+                                        ;                                    (disable-vpn? #t)
+                                        ;                                    (use-iwd? #t)))
+                                        ;                          (service guix-wpa-supplicant-service-type)
+                          (service ntp-service-type)
                           (service iwd-service-type))
                     %base-services))
 
