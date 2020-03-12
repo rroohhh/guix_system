@@ -134,6 +134,9 @@ debug:
 draw_bold_text_with_bright_colors: false
 
 colors:
+  cursor:
+    cursor: " (theme red) "
+    text: " (theme fg) "
   primary:
     background: " (theme bg) "
     foreground: " (theme fg) "
