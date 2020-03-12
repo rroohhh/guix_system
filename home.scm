@@ -1211,6 +1211,7 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
     (symlink-file-home "/data/.npm" ".npm")      ; fuck it
     (symlink-file-home "/data/.ghidra" ".ghidra")      ; fuck it
     (symlink-file-home "/data/.factorio" ".factorio")      ; fuck it
+    (symlink-file-home "/data/.Xilinx" ".Xilinx")      ; fuck it, the installer doesn't even take $HOME
     (symlink-file-home "/data/texmf" "texmf") ; TODO(robin): rework this to static files in the store? (or build packages for the few missing things)
     (symlink-file-home "/data/robin/.config/chromium" ".config/chromium")))
 ;;  #:guix-config-symlink "/data/robin/.config/guix")
