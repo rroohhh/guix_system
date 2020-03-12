@@ -4,15 +4,17 @@
 (use-home-modules utils)
 
 (use-modules (gnu))
-(use-package-modules xdisorg admin glib pulseaudio wm emacs ncurses tmux dunst messaging irc terminals)
+(use-package-modules xdisorg admin glib pulseaudio wm emacs ncurses tmux dunst messaging irc terminals compression)
 
 (use-modules (gnu system keyboard))
 (use-modules (gnu services xorg))
 
 (use-modules (guix gexp))
+(use-modules (guix packages))
 
 (use-modules (vup home i3))
 (use-modules (vup hwinfo))
+(use-modules (vup rust-nightly))
 (use-modules (vup xkeylogger))
 (use-modules (vup ip_addr))
 (use-modules (vup i3-gaps))
@@ -190,9 +192,10 @@ live_config_reload: true
 
 alt_send_esc: true
 key_bindings:
-  - { key: Paste,                   action: Paste                        }
-  - { key: Copy,                    action: Copy                         }
-  - { key: L,        mods: Control, action: ClearLogNotice               }
+  - { key: Return,   mods: Control, chars: \"\x1b[27;5;13~\"               }
+  - { key: Paste,                   action: Paste                          }
+  - { key: Copy,                    action: Copy                           }
+  - { key: L,        mods: Control, action: ClearLogNotice                 }
   - { key: L,        mods: Control, chars: \"\x0c\"                        }
   - { key: Home,                    chars: \"\x1bOH\",   mode: AppCursor   }
   - { key: Home,                    chars: \"\x1b[H\",   mode: ~AppCursor  }
@@ -295,6 +298,19 @@ key_bindings:
   (plain-file "gitconfig" "[user]
         email = robin.ole.heinemann@t-online.de
         name = Robin Ole Heinemann"))
+
+(define rust-nightly-src
+  (computed-file "rust-src"
+     #~(let* ((out #$output))
+         (use-modules (guix build utils))
+         (display out)
+         (mkdir-p out)
+         (chdir out)
+         (setenv "PATH" (string-append (getenv "PATH") ":" #$(file-append xz "/bin/")))
+         (invoke #$(file-append tar "/bin/tar") "xvf" #$(package-source rust-nightly) "--strip-components=1"))
+    #:options
+    '(#:local-build? #t
+      #:modules ((guix build utils)))))
 
 (define bashrc
   (computed-file "bashrc"
@@ -467,6 +483,8 @@ HISTFILESIZE=
 
 export EDITOR='TERM=xterm-24bits emacsclient -c -t'
 export VISUAL=$EDITOR
+
+export RUST_SRC_PATH=" #$(file-append rust-nightly-src "/src")"
 
 alias ls='exa --color=auto'
 alias l='exa -la'
