@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: cc
+# key: cc
+# --
+\catcode\`(=12
+\catcode\`)=12
+$0
+\catcode\`(=\active
+\catcode\`)=\active

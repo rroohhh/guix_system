@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: cal
+# key: cal
+# --
+\mathcal{$1}$0

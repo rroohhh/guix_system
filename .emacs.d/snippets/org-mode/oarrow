@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: oarrow
+# key: oarrow
+# --
+\overarrow[$1]{$2}$0

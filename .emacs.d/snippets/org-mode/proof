@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: proof
+# key: proof
+# --
+#+begin_proof latex
+$0
+#+end_proof

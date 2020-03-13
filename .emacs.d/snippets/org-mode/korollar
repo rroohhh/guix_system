@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: korollar
+# key: korollar
+# --
+#+ATTR_LATEX: :options [$1]
+#+begin_korollar latex
+$0
+#+end_korollar

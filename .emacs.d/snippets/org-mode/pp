@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: pp
+# key: pp
+# --
+\pp{$1}{$2}$0

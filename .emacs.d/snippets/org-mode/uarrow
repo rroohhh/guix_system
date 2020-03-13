@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: uarrow
+# key: uarrow
+# --
+\underarrow[$1]{$2}$0

@@ -1,0 +1,20 @@
+# -*- mode: snippet -*-
+# name: pmatrix
+# key: pmatrix
+# type: command
+# --
+(let ((yas-good-grace nil)
+      (width (read-number "width: "))
+	  (height (read-number "height: ")))
+  (yas-expand-snippet
+   (concat "\\begin{pmatrix}"
+         (mapconcat
+		 (lambda (row)
+           (mapconcat
+            (lambda (num)
+              (format "${%d:%d}" num num))
+            (number-sequence row (+ row width -1) nil)
+            " & "))
+			(number-sequence 1 (* width height) width)
+			" \\\\\\\\ ")
+           "\\end{pmatrix}")))

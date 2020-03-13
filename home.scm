@@ -1211,7 +1211,7 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
     (symlink-file-home "/data/.notmuch-config" ".notmuch-config") ; TODO(robin): move to generated config
     (symlink-file-home "/data/.mbsyncrc" ".mbsyncrc") ; SECRETS, TODO(robin): move to generated config
     (symlink-file-home "/data/.msmtprc" ".msmtprc") ; SECRETS, TODO(robin): move to generated config
-    (symlink-file-home "/data/projects/dotfiles-gentoo/.config/dunst/dunstrc" ".config/dunst/dunstrc") ; TODO(robin): move to generated config
+    (symlink-file-home "/data/projects/guix_system/dunstrc" ".config/dunst/dunstrc") ; TODO(robin): move to generated config
     (symlink-file-home "/data/robin/.bash_history" ".bash_history")
     (symlink-file-home "/data/robin/log/shepherd.log" "log/shepherd.log")
     (symlink-file-home "/data/robin/.ssh/id_ed25519.pub" ".ssh/id_ed25519.pub")
@@ -1222,8 +1222,8 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
     (symlink-file-home "/data/.config/horizon" ".config/horizon") ; TODO(robin): maybe generate the color scheme from here?
     (symlink-file-home "/data/robin/.config/kicad" ".config/kicad") ; TODO(robin) what
     (symlink-file-home "/data/robin/.purple" ".purple") ; SECRETS, TODO(robin): figure out what to do about    this one
-    (symlink-file-home "/data/projects/dotfiles-gentoo/.emacs.d" ".emacs.d") ; TODO(robin): figure out this one
-    (symlink-file-home "/data/projects/dotfiles-gentoo/.clang-format" ".clang-format") ; TODO(robin): figure out this one
+    (symlink-file-home "/data/projects/guix_system/.emacs.d" ".emacs.d") ; TODO(robin): figure out this one
+    (symlink-file-home "/data/projects/guix_system/.clang-format" ".clang-format") ; TODO(robin): figure out this one
     (symlink-file-home "/data/robin/.texlive2018" ".texlive2018")
     (symlink-file-home "/data/robin/.Xilinx" ".Xilinx")
     (symlink-file-home "/data/.config/configstore" ".config/configstore")  ; fuck it

@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: ex
+# key: ex
+# --
+#+ATTR_LATEX: :options [$1]
+#+begin_ex latex
+$0
+#+end_ex

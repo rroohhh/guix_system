@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: def
+# key: def
+# --
+\xLeftrightarrow{\text{Def}}
