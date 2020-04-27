@@ -6,16 +6,14 @@
 
 (use-modules (guix packages))
 (use-modules (guix records))
-(use-package-modules bootloaders certs wm suckless xorg linux ssh emacs vim version-control mail connman polkit vpn samba admin glib autotools readline documentation pkg-config python tls) ; gnome for nm-applet
+(use-package-modules bootloaders certs wm suckless xorg linux ssh emacs vim version-control mail connman polkit vpn samba admin glib autotools readline documentation pkg-config python tls android rust-apps) ; gnome for nm-applet
                                         ; (use-modules ((gnu packages networking) #:prefix guix-))
 
 (use-modules (gnu services))
 (use-service-modules desktop avahi dbus xorg shepherd mcron docker networking)
 (use-modules ((gnu services networking) #:prefix guix-))
 
-(use-modules (vup ripgrep))
 (use-modules (vup linux))
-(use-modules (vup exa))
 (use-modules (vup caps2esc))
 (use-modules (vup hwinfo))
 
@@ -297,8 +295,8 @@ a network connection manager."))))
                            %setuid-programs))
 
   (kernel linux-nonfree)
-  (kernel-arguments '("--rootflags=compress=zstd,discard,subvolid=54188,subvol=@guix_root,acl"))
-  (firmware (append (list iwlwifi-firmware-nonfree) %base-firmware))
+  (kernel-arguments '("--rootflags=compress=zstd,discard,subvolid=54188,subvol=@guix_root,acl" "mitigations=off"))
+  (firmware (append (list linux-firmware-nonfree) %base-firmware))
 
   (mapped-devices
    (list (mapped-device
@@ -330,16 +328,18 @@ a network connection manager."))))
                     (type "vfat")))
                  %base-file-systems))
 
+  (groups (append %base-groups (list (user-group (system? #t) (name "adbusers")))))
+
   (users (cons (user-account
                 (name "robin")
                 (comment "owner")
                 (group "users")
-                (supplementary-groups '("wheel" "netdev"
-                                        "audio" "video" "docker")))
+                (supplementary-groups '("lp" "wheel" "netdev"
+                                        "audio" "video" "docker" "adbusers")))
                %base-user-accounts))
 
   (packages (append (list
-                     openssh emacs vim git rust-ripgrep_11_0_2 rust-exa_0_9_0
+                     openssh emacs vim git ripgrep exa
                      ;; for HTTPS access
                      nss-certs)
                     %base-packages))
@@ -354,6 +354,7 @@ a network connection manager."))))
                           (service polkit-service-type)
                           (elogind-service)
                           (dbus-service)
+                          (bluetooth-service)
 
                           (service tlp-service-type
                                    (tlp-configuration
@@ -376,7 +377,12 @@ a network connection manager."))))
                                         ;                          (service guix-wpa-supplicant-service-type)
                           (service ntp-service-type)
                           (service iwd-service-type))
-                    %base-services))
+                    (modify-services %base-services
+                      (udev-service-type config =>
+                                         (udev-configuration
+                                          (inherit config)
+                                          (rules (append (udev-configuration-rules config) (list android-udev-rules)))))
+                                         )))
 
   ;; Allow resolution of '.local' host names with mDNS.
   ;; no idea what this does
