@@ -4,7 +4,7 @@
 (use-home-modules utils)
 
 (use-modules (gnu))
-(use-package-modules xdisorg admin glib pulseaudio wm emacs ncurses tmux dunst messaging irc terminals compression)
+(use-package-modules xdisorg admin glib pulseaudio wm emacs ncurses tmux dunst messaging irc terminals compression xorg)
 
 (use-modules (gnu system keyboard))
 (use-modules (gnu services xorg))
@@ -828,6 +828,15 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
      #:provides '(dunst)
      #:command `(,#$(file-append dunst "/bin/dunst"))))
 
+;; TODO(robin): make it oneshot
+(define (natural-scrolling-service display)
+   (make-simple-forkexec-display-service display
+     #:one-shot? #t
+     #:docstring "set natural scrolling"
+     #:provides '(natural-scrolling)
+     #:command `(,#$(file-append xinput "/bin/xinput") "set-prop" "TPPS/2 IBM TrackPoint" "libinput Natural Scrolling Enabled" "1")))
+
+
 ;; (define (xterm-service display)
 ;;   (make-simple-forkexec-display-service display
 ;;     #:docstring "Xterm"
@@ -858,6 +867,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
              telegram-service
              dunst-service
              xkeylogger-service
+             natural-scrolling-service
              )))
 
 (apply register-services
@@ -878,6 +888,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (start 'quasselclient:0)
 (start 'telegram:0)
 (start 'xkeylogger:0)
+(start 'natural-scrolling:0)
 )))
 
 (define bash_profile 
@@ -1227,12 +1238,20 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
     (symlink-file-home "/data/robin/.texlive2018" ".texlive2018")
     (symlink-file-home "/data/robin/.Xilinx" ".Xilinx")
     (symlink-file-home "/data/.config/configstore" ".config/configstore")  ; fuck it
+    (symlink-file-home "/data/.config/skypeforlinux" ".config/skypeforlinux")  ; fuck it
+    (symlink-file-home "/data/.config/unity3d" ".config/unity3d")  ; fuck it
+    (symlink-file-home "/data/.gradle" ".gradle")  ; fuck it
+    (symlink-file-home "/data/.frida" ".frida")  ; fuck it
     (symlink-file-home "/data/.cargo" ".cargo")  ; fuck it
     (symlink-file-home "/data/.fonts" ".fonts")  ; fuck it
     (symlink-file-home "/data/.npm" ".npm")      ; fuck it
+    (symlink-file-home "/data/.AndroidStudio3.6" ".AndroidStudio3.6")      ; fuck it
+    (symlink-file-home "/data/.android" ".android")      ; fuck it
+    (symlink-file-home "/data/.gradle" ".gradle")      ; fuck it
     (symlink-file-home "/data/.ghidra" ".ghidra")      ; fuck it
+    (symlink-file-home "/data/.FreeCAD/" ".FreeCAD")      ; fuck it
     (symlink-file-home "/data/.factorio" ".factorio")      ; fuck it
-    (symlink-file-home "/data/.Xilinx" ".Xilinx")      ; fuck it, the installer doesn't even take $HOME
+    (symlink-file-home "/data/.m2" ".m2")      ; fuck it
     (symlink-file-home "/data/texmf" "texmf") ; TODO(robin): rework this to static files in the store? (or build packages for the few missing things)
     (symlink-file-home "/data/robin/.config/chromium" ".config/chromium")))
 ;;  #:guix-config-symlink "/data/robin/.config/guix")
