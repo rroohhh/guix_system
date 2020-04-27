@@ -17,8 +17,8 @@
 
 (use-package company-jedi
   :init
- ;; (setq jedi:server-command `("python3" ,(concat jedi:source-dir "jediepcserver.py")))
   :config
+  (setq jedi:server-command `("python3" ,(concat jedi:source-dir "jediepcserver.py")))
   (defun python-mode-hook ()
     (add-to-list 'company-backends 'company-jedi))
 
