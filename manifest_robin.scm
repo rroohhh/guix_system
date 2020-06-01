@@ -1,6 +1,6 @@
 (use-modules (vup patches))
 
-(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java)
+(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control)
 
 (use-modules (vup rust-nightly))
 (use-modules (vup fpga))
@@ -9,6 +9,8 @@
 (use-modules (vup biber-old))
 (use-modules (vup horizon))
 (use-modules (vup unrar))
+(use-modules (vup x))
+(use-modules (vup solvespace))
 
 
 
@@ -37,13 +39,15 @@
   xdot
   lm-sensors
   kicad
-  kicad-library
+  kicad-templates
+  kicad-footprints
+  kicad-packages3d
   kicad-symbols
   fastboot
   adb
   rust-nightly
   (list rust-nightly "cargo")
-  lld-8
+  lld-10
   wireshark
   (list isc-bind "utils")
   xdg-utils
@@ -79,6 +83,19 @@
   scrot
   youtube-dl
   ffmpeg
+  iptables
+  patchelf
+  openssl
+  sqlite
+  x2x
+  perl
+
+  ; cad
+  freecad
+  solvespace
+
+  ; lang
+  go
 
   ; java
   (list icedtea "jdk")
@@ -92,19 +109,25 @@
   texlive
   biber-2.11
   python-pygments ; minted
-  texlive-luatex-luaotfload
+  ;; texlive-luatex-luaotfload ; broken
 
   ; fpga
   gtkwave
-  python-bitarray
-  python-pyvcd
-  python-jinja2
   python-nmigen
   python-nmigen-boards
+  python-nmigen-stdio
+  python-nmigen-soc
   yosys-git
   nextpnr
 
   ; python
+  python-pyyaml
+  python-sortedcontainers
+  python-toposort
+  python-jedi
+  python-lz4
+  python-astropy
+  python-epc
   python-chipsec
   python-varname
   python-pandas
@@ -114,7 +137,7 @@
   python-quadpy
   python-fitsio
   python-colorhash
-  python-pint
+  ;; python-pint
   python-requests
   python-ruamel.yaml
   python-toml
@@ -128,7 +151,7 @@
 
 
   ; IM
-  qtox
+  ;; qtox ; broken currently
   quassel
 
   ; desktop shit
@@ -149,6 +172,18 @@
   font-google-noto
 
   ; dev dependencies
+  podofo
+  opencascade-occt
+  libgit2
+  zeromq
+  glm
+  cppzmq
+  librsvg
+  gtkmm
+  libzip
+  cairomm
+  glib
+  (list glib "bin")
   vulkan-loader
   ncurses
   gnu-make
@@ -180,4 +215,5 @@
   freetype
   libinput
   ninja
+  alsa-lib
   ))
