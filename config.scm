@@ -10,7 +10,7 @@
                                         ; (use-modules ((gnu packages networking) #:prefix guix-))
 
 (use-modules (gnu services))
-(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking)
+(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking ssh)
 (use-modules ((gnu services networking) #:prefix guix-))
 
 (use-modules (vup linux))
@@ -376,7 +376,12 @@ a network connection manager."))))
                                         ;                                    (use-iwd? #t)))
                                         ;                          (service guix-wpa-supplicant-service-type)
                           (service ntp-service-type)
-                          (service iwd-service-type))
+                          (service iwd-service-type)
+                          (service openssh-service-type
+                                   (openssh-configuration
+                                    (x11-forwarding? #t)
+                                    (authorized-keys
+                                     `(("robin" ,(local-file "robin.pub")))))))
                     (modify-services %base-services
                       (udev-service-type config =>
                                          (udev-configuration
