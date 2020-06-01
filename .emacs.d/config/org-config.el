@@ -7,6 +7,10 @@
 
 (add-hook 'org-mode 'turn-on-auto-fill)
 
+(with-eval-after-load 'org
+  (progn
+    (setcdr (assoc "\\.pdf\\'" org-file-apps) "evince %s")))
+
 (with-eval-after-load 'ox-latex
   (add-to-list 'org-latex-classes
                '("koma-article"

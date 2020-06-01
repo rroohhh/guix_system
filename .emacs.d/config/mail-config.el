@@ -5,7 +5,13 @@
 
 (use-package notmuch
   :config
-  (setq notmuch-search-sort-order 'newest-first))
+  (setq notmuch-search-sort-order 'newest-first)
+  (evil-define-key 'normal notmuch-search-mode-map (kbd "n") 'evil-next-line)
+  (evil-define-key 'normal notmuch-search-mode-map (kbd "t") 'evil-previous-line)
+
+  (evil-define-key 'visual notmuch-search-mode-map (kbd "n") 'evil-next-line)
+  (evil-define-key 'visual notmuch-search-mode-map (kbd "t") 'evil-previous-line))
+
 
 (setq send-mail-function 'sendmail-send-it
       sendmail-program "msmtp"

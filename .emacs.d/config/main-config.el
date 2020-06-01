@@ -225,5 +225,7 @@
 (use-package rainbow-mode
   :hook (prog-mode . rainbow-mode))
 
+(use-package csv-mode)
+
 (provide 'main-config)
 ;;; main-config.el ends here
