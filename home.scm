@@ -1192,6 +1192,7 @@ set -g status-right-length 100
 
 set -g status-left ''
 
+
 set -g status-right \"#[fg=colour239,bg=colour237,nobold,nounderscore,noitalics]#[fg=colour246,bg=colour239] %Y-%m-%d  %H:%M #[fg=colour246,bg=colour239,nobold,nounderscore,noitalics]#[fg=colour235,bg=colour246] #h \"
 
 setw -g window-status-format \"#[fg=colour246,bg=colour237] #I #[fg=colour246,bg=colour237] #W \"
@@ -1205,6 +1206,10 @@ mail_client = emacsclient -c -e '(notmuch)'
 recency_interval_hours = 0
 hidden_tags = inbox unread attachment replied sent encrypted signed"))
 
+(define default-applications-config
+  (plain-file "defaults.list" "[Default Applications]
+application/pdf=org.gnome.Evince.desktop;"))
+
 
 (home "/data/robin"
   (list
@@ -1216,6 +1221,7 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
     (simple-file-home rofi-config ".config/rofi/config.rasi")
     (simple-file-home notifymuch-config ".config/notifymuch/notifymuch.cfg")
     (simple-file-home tmux-config ".tmux.conf")
+    ;; (simple-file-home default-applications-config ".local/share/applications/defaults.list")
     emacs-terminfo
     (i3-home i3-config)
     (symlink-file-home "/data/.mail" ".mail")
@@ -1240,6 +1246,7 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
     (symlink-file-home "/data/.config/configstore" ".config/configstore")  ; fuck it
     (symlink-file-home "/data/.config/skypeforlinux" ".config/skypeforlinux")  ; fuck it
     (symlink-file-home "/data/.config/unity3d" ".config/unity3d")  ; fuck it
+    (symlink-file-home "/data/.config/dconf" ".config/dconf")  ; fuck it
     (symlink-file-home "/data/.gradle" ".gradle")  ; fuck it
     (symlink-file-home "/data/.frida" ".frida")  ; fuck it
     (symlink-file-home "/data/.cargo" ".cargo")  ; fuck it
@@ -1252,6 +1259,13 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
     (symlink-file-home "/data/.FreeCAD/" ".FreeCAD")      ; fuck it
     (symlink-file-home "/data/.factorio" ".factorio")      ; fuck it
     (symlink-file-home "/data/.m2" ".m2")      ; fuck it
+    (symlink-file-home "/data/.tabula" ".tabula")      ; fuck it
+    (symlink-file-home "/data/.flutter_tool_state" ".flutter_tool_state")      ; fuck it
+    (symlink-file-home "/data/.flutter" ".flutter")      ; fuck it
+    (symlink-file-home "/data/.flutter_settings" ".flutter_settings")      ; fuck it
+    (symlink-file-home "/data/.pub-cache" ".pub-cache")      ; fuck it
+    (symlink-file-home "/data/.vpython-root" ".vpython-root")      ; fuck it
+    (symlink-file-home "/data/.vpython_cipd_cache" ".vpython_cipd_cache")      ; fuck it
     (symlink-file-home "/data/texmf" "texmf") ; TODO(robin): rework this to static files in the store? (or build packages for the few missing things)
     (symlink-file-home "/data/robin/.config/chromium" ".config/chromium")))
 ;;  #:guix-config-symlink "/data/robin/.config/guix")
