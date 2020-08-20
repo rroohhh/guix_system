@@ -43,7 +43,8 @@
     (hover lsp-ui lsp-dart csv-mode helm-rg yaml-mode ws-butler wolfram-mode which-key web-mode web-beautify vlf term-cursor spaceline smartparens smart-comment slack scad-mode real-auto-save rainbow-mode rainbow-delimiters racer quelpa-use-package persistent-scratch ox-pandoc org-bullets oberon ob-rust notmuch nlinum-relative modern-cpp-font-lock magit json-mode jedi irony-eldoc hungry-delete highlight-sexp helm-swoop helm-projectile helm-ag gruvbox-theme go-mode gnuplot-mode git-gutter fzf flycheck-ycmd flycheck-rust flycheck-irony fancy-battery expand-region evil-terminal-cursor-changer evil-surround evil-org evil-mc evil-matchit evil-leader evil-iedit-state evil-goggles evil-god-state evil-collection dts-mode diminish counsel company-ycmd company-try-hard company-tern company-statistics company-rtags company-quickhelp company-lsp company-jedi company-irony-c-headers company-irony company-auctex commenter cmake-mode cmake-ide clang-format cargo beacon avy auto-package-update)))
  '(safe-local-variable-values
    (quote
-    ((eval modify-syntax-entry 43 "'")
+    ((cmake-ide-dir . "build")
+     (eval modify-syntax-entry 43 "'")
      (eval modify-syntax-entry 36 "'")
      (eval modify-syntax-entry 126 "'")))))
 (custom-set-faces

@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# name: stateless_widget
+# key: swid
+# --
+class $1 extends StatelessWidget {
+  const $1($2);
+
+  @override
+  Widget build(BuildContext context) {
+    return $0
+  }
+}

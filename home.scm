@@ -56,6 +56,21 @@
 
 (define monospace-font "Hack")
 
+(define-syntax vup
+  (syntax-rules (left right up down)
+    ((_ left) "s")
+    ((_ right) "l")
+    ((_ up) "t")
+    ((_ down) "n")))
+
+(define-syntax keys*
+  (syntax-rules ()
+    ((_ args* ...) (vup args* ...))))
+
+(define-syntax keys
+  (syntax-rules ()
+    ((_ args* ...) (string-append "\"" (keys* args* ...) "\""))))
+
 (define-syntax gruvbox-dark
   (syntax-rules (bg bg1 fg bright black red green yellow blue magenta cyan white orange)
     ((_ bg)             "#282828")
@@ -297,7 +312,17 @@ key_bindings:
 (define gitconfig
   (plain-file "gitconfig" "[user]
         email = robin.ole.heinemann@t-online.de
-        name = Robin Ole Heinemann"))
+        name = Robin Ole Heinemann
+[pull]
+ff = only"))
+
+(define rust-nightly-full
+  (package
+    (inherit rust-nightly)
+    (source
+     (origin
+       (inherit (package-source rust-nightly))
+       (snippet '(begin #t))))))
 
 (define rust-nightly-src
   (computed-file "rust-src"
@@ -307,7 +332,7 @@ key_bindings:
          (mkdir-p out)
          (chdir out)
          (setenv "PATH" (string-append (getenv "PATH") ":" #$(file-append xz "/bin/")))
-         (invoke #$(file-append tar "/bin/tar") "xvf" #$(package-source rust-nightly) "--strip-components=1"))
+         (invoke #$(file-append tar "/bin/tar") "xvf" #$(package-source rust-nightly-full) "--strip-components=1"))
     #:options
     '(#:local-build? #t
       #:modules ((guix build utils)))))
@@ -498,7 +523,7 @@ alias vi=$EDITOR
 [ -z \"$TMUX\" ] && (grep -e '/dev/tty[1-9]' <(tty) > /dev/null || " #$(file-append tmux "/bin/tmux") " new-session -t robin)")))))))
 
 (define shepherd-config
-  (scheme-file "init.scm" 
+  (scheme-file "init.scm"
     #~(begin
 (use-modules
  (ice-9 popen)
@@ -508,7 +533,7 @@ alias vi=$EDITOR
  (srfi srfi-1)
  (srfi srfi-26))
 
-(define startx #$(xorg-start-command (xorg-configuration 
+(define startx #$(xorg-start-command (xorg-configuration
                        (keyboard-layout (keyboard-layout "de" "vup")))))
 
 (define (environment-excursion env-thunk body-thunk)
@@ -779,7 +804,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 ;;       (make-system-constructor-with-env
 ;;        '("openbox" "--reconfigure")
 ;;        #:display display)))))
-;; 
+;;
 ;; (define (stumpwm-service display)
 ;;   (make-simple-forkexec-display-service display
 ;;     #:docstring "Stumpwm"
@@ -822,13 +847,18 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
      #:provides '(telegram)
      #:command `(,#$(file-append telegram-desktop "/bin/telegram-desktop"))))
 
+(define (pavucontrol-service display)
+   (make-simple-forkexec-display-service display
+     #:docstring "Pavucontrol"
+     #:provides '(pavucontrol)
+     #:command `(,#$(file-append pavucontrol "/bin/pavucontrol"))))
+
 (define (dunst-service display)
    (make-simple-forkexec-display-service display
      #:docstring "Dunst"
      #:provides '(dunst)
      #:command `(,#$(file-append dunst "/bin/dunst"))))
 
-;; TODO(robin): make it oneshot
 (define (natural-scrolling-service display)
    (make-simple-forkexec-display-service display
      #:one-shot? #t
@@ -866,12 +896,13 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
              quasselclient-service
              telegram-service
              dunst-service
+             pavucontrol-service
              xkeylogger-service
              natural-scrolling-service
              )))
 
 (apply register-services
-       (append 
+       (append
      (list
        emacs-daemon)
      (make-display-services ":0")))
@@ -882,6 +913,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (start 'dbus:0)
 (start 'pulseaudio:0)
 (start 'dunst:0)
+(start 'pavucontrol:0)
 (start 'tmux:0)
 (start 'emacsd)
 (start 'emacsclient:0)
@@ -891,19 +923,19 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (start 'natural-scrolling:0)
 )))
 
-(define bash_profile 
-  (mixed-text-file "bash_profile" 
+(define bash_profile
+  (mixed-text-file "bash_profile"
     "if [ -f ~/.bashrc ]; then . ~/.bashrc; fi
 
 [[ -z $(pgrep -U $(id --user) '^shepherd$') ]] && " (file-append shepherd "/bin/shepherd") " -l ~/log/shepherd.log -c " shepherd-config " >> ~/log/shepherd.log 2>&1"))
 
-(define i3-config 
+(define i3-config
   (let*
     ((mod "Mod4")
-     (left "s")
-     (down "n")
-     (up "t")
-     (right "l")
+     (left (keys* left))
+     (down (keys* down))
+     (up (keys* up))
+     (right (keys* right))
      (bg-color (theme bg))
      (bg-hl-color "#383838")
      (fg-color (theme fg))
@@ -1131,9 +1163,8 @@ interval=1
         (color-window ("#cc2f343f" "#0000"         "#0000"))))))))
 
 
-
 (define tmux-config
-  (plain-file "tmux.conf" "setw -g aggressive-resize on
+  (plain-file "tmux.conf" (string-append "setw -g aggressive-resize on
 set-window-option -g xterm-keys on
 set-window-option -g mode-key vi
 set-option -g history-limit 100000
@@ -1157,14 +1188,14 @@ bind -n M-c new-window
 
 bind r source-file ~/.tmux.conf
 
-bind-key -n M-s select-pane -L
-bind-key -n M-n select-pane -D
-bind-key -n M-t select-pane -U
-bind-key -n M-l select-pane -R
+bind-key -n M-" (keys* left) " select-pane -L
+bind-key -n M-" (keys* down) " select-pane -D
+bind-key -n M-" (keys* up) " select-pane -U
+bind-key -n M-" (keys* right) " select-pane -R
 
 setw -g monitor-activity on
-bind -n M-S previous-window
-bind -n M-L next-window
+bind -n M-" (string-upcase (keys* left)) " previous-window
+bind -n M-" (string-upcase (keys* right)) " next-window
 bind -n M-m copy-mode
 
 set-option -g renumber-windows on
@@ -1197,7 +1228,7 @@ set -g status-right \"#[fg=colour239,bg=colour237,nobold,nounderscore,noitalics]
 
 setw -g window-status-format \"#[fg=colour246,bg=colour237] #I #[fg=colour246,bg=colour237] #W \"
 
-setw -g window-status-current-format \"#[fg=colour237,bg=colour214,nobold,nounderscore,noitalics]#[fg=colour235,bg=colour214] #I #[fg=colour235,bg=colour214] #W #[fg=colour214,bg=colour237,nobold,nounderscore,noitalics]\""))
+setw -g window-status-current-format \"#[fg=colour237,bg=colour214,nobold,nounderscore,noitalics]#[fg=colour235,bg=colour214] #I #[fg=colour235,bg=colour214] #W #[fg=colour214,bg=colour237,nobold,nounderscore,noitalics]\"")))
 
 (define notifymuch-config
   (plain-file "notifymuch.cfg" "[notifymuch]
@@ -1210,6 +1241,14 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
   (plain-file "defaults.list" "[Default Applications]
 application/pdf=org.gnome.Evince.desktop;"))
 
+(define inputrc
+  (plain-file "inputrc" (string-append "set editing-mode vi
+set keymap vi-command
+\"k\": nop
+\"j\": nop
+" (keys up) ": previous-history
+" (keys down) ": next-history")))
+
 
 (home "/data/robin"
   (list
@@ -1221,6 +1260,7 @@ application/pdf=org.gnome.Evince.desktop;"))
     (simple-file-home rofi-config ".config/rofi/config.rasi")
     (simple-file-home notifymuch-config ".config/notifymuch/notifymuch.cfg")
     (simple-file-home tmux-config ".tmux.conf")
+    (simple-file-home inputrc ".inputrc")
     ;; (simple-file-home default-applications-config ".local/share/applications/defaults.list")
     emacs-terminfo
     (i3-home i3-config)

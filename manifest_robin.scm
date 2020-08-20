@@ -1,8 +1,9 @@
 (use-modules (vup patches))
 
-(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control)
+(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent)
 
 (use-modules (vup rust-nightly))
+(use-modules (vup misc))
 (use-modules (vup fpga))
 (use-modules (vup python-xyz))
 (use-modules (vup lld))
@@ -46,7 +47,7 @@
   fastboot
   adb
   rust-nightly
-  (list rust-nightly "cargo")
+  (list rust-nightly "doc")
   lld-10
   wireshark
   (list isc-bind "utils")
@@ -89,9 +90,27 @@
   sqlite
   x2x
   perl
+  p7zip
+  glade3
+  gstreamer
+  gst-plugins-good
+  gst-plugins-bad
+  gst-plugins-base
+  gst-plugins-ugly
+  clang
+  imagemagick
+  ghostscript
+  smartmontools
+  mbuffer
+  xclip
+  qbittorrent
+  openocd
+
+  ; games
+  crawl-tiles
 
   ; cad
-  freecad
+  ;; freecad currently broken
   solvespace
 
   ; lang
@@ -128,7 +147,7 @@
   python-lz4
   python-astropy
   python-epc
-  python-chipsec
+  ;; python-chipsec ; broken on linux >= 5.7.0
   python-varname
   python-pandas
   python-tqdm
@@ -137,12 +156,19 @@
   python-quadpy
   python-fitsio
   python-colorhash
-  ;; python-pint
+  python-pint
   python-requests
   python-ruamel.yaml
   python-toml
   python-xmltodict
-
+  python-pikepdf
+  python-bluepy
+  python-pypng
+  python-flask
+  python-solaredge-modbus
+  python-libusb1
+  python-joblib
+  python-intelhex
 
   ; compression
   lz4
@@ -151,7 +177,7 @@
 
 
   ; IM
-  ;; qtox ; broken currently
+  qtox
   quassel
 
   ; desktop shit
@@ -195,7 +221,7 @@
   eudev
   boost
   fuse
-  gcc-toolchain-9
+  gcc-toolchain-10
   cmake
   expat
   qtbase
@@ -216,4 +242,5 @@
   libinput
   ninja
   alsa-lib
+  libevent
   ))

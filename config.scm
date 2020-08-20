@@ -7,10 +7,10 @@
 (use-modules (guix packages))
 (use-modules (guix records))
 (use-package-modules bootloaders certs wm suckless xorg linux ssh emacs vim version-control mail connman polkit vpn samba admin glib autotools readline documentation pkg-config python tls android rust-apps) ; gnome for nm-applet
-                                        ; (use-modules ((gnu packages networking) #:prefix guix-))
+;; (use-modules ((gnu packages networking) #:prefix guix-))
 
 (use-modules (gnu services))
-(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking ssh)
+(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking ssh linux)
 (use-modules ((gnu services networking) #:prefix guix-))
 
 (use-modules (vup linux))
@@ -19,9 +19,9 @@
 
 (use-modules (my-tlp))
 
-                                        ; (use-modules ((iwd)
-                                        ;               #:select (iwd-service-type)))
-                                        ; (use-modules (iwd))
+;; (use-modules ((iwd)
+;;               #:select (iwd-service-type)))
+;; (use-modules (iwd))
 
 
 (use-modules (srfi srfi-1))
@@ -335,7 +335,8 @@ a network connection manager."))))
                 (comment "owner")
                 (group "users")
                 (supplementary-groups '("lp" "wheel" "netdev"
-                                        "audio" "video" "docker" "adbusers")))
+                                        "audio" "video" "docker" "adbusers"
+                                        "kvm")))
                %base-user-accounts))
 
   (packages (append (list
@@ -369,12 +370,17 @@ a network connection manager."))))
                                                        (string-append #$isync "/bin/mbsync -a; " #$notmuch "/bin/notmuch new")
                                                        #:user "robin")))))
 
-                                        ;                          (service connman-service-type
-                                        ;                                   (connman-configuration
-                                        ;                                    (connman connman-with-iwd)
-                                        ;                                    (disable-vpn? #t)
-                                        ;                                    (use-iwd? #t)))
-                                        ;                          (service guix-wpa-supplicant-service-type)
+                          (service zram-device-service-type
+                                   (zram-device-configuration
+                                    (size "8G")
+                                    (compression-algorithm 'lz4)))
+
+                          ;; (service connman-service-type
+                          ;;          (connman-configuration
+                          ;;           (connman connman-with-iwd)
+                          ;;           (disable-vpn? #t)
+                          ;;           (use-iwd? #t)))
+                          ;; (service guix-wpa-supplicant-service-type)
                           (service ntp-service-type)
                           (service iwd-service-type)
                           (service openssh-service-type
@@ -387,7 +393,7 @@ a network connection manager."))))
                                          (udev-configuration
                                           (inherit config)
                                           (rules (append (udev-configuration-rules config) (list android-udev-rules)))))
-                                         )))
+                      )))
 
   ;; Allow resolution of '.local' host names with mDNS.
   ;; no idea what this does
