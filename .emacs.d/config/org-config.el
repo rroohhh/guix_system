@@ -30,7 +30,8 @@
 
 (org-babel-do-load-languages
  'org-babel-load-languages
- '((python . t) (rust . t) (C . t) (gnuplot . t)))
+ '((python . t) (C . t) (gnuplot . t)))
+ ;; '((python . t) (rust . t) (C . t) (gnuplot . t)))
 
 (use-package org-bullets)
 

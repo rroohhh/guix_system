@@ -25,20 +25,13 @@
   :config
   (add-hook 'after-init-hook 'company-statistics-mode))
 
-(use-package company-tern
-  :config
-  (add-to-list 'company-backends 'company-tern))
+;; (use-package company-tern
+;;   :config
+;;   (add-to-list 'company-backends 'company-tern))
 
 ; (use-package company-quickhelp
 ;   :config
 ;   (company-quickhelp-mode))
-
-(use-package company-lsp
-  :demand
-  :config
-  (add-to-list 'company-backends 'company-lsp))
-
-(setq lsp-rust-analyzer-server-command "/data/.cargo/bin/rust-analyzer")
 
 (provide 'company-config)
 ;;; company-config.el ends here

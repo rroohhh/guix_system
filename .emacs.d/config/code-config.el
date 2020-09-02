@@ -83,5 +83,69 @@
       fixme-modes)
 
 
+(use-package lsp-mode
+  :ensure t
+  :hook (rust-mode . lsp)
+  :init
+  (setq lsp-auto-guess-root t)
+  (setq lsp-enable-snippet t)
+  :config '(require lsp-clients)
+  (setq lsp-auto-guess-root t)
+  (setq lsp-enable-snippet t))
+
+(use-package lsp-dart
+  :ensure t
+  :init (setq lsp-dart-sdk-dir "/data/projects/dias/dart-sdk/flutter/bin/cache/dart-sdk/")
+  :hook (dart-mode . lsp))
+
+(use-package lsp-ui
+  :ensure t
+  :config
+  (defun lsp-ui-doc--inline-width-string (string)
+    "Returns numbers of characters that are display in STRING.
+Use because `string-width' counts invisible characters."
+    (with-temp-buffer
+      (insert string)
+      (goto-char (point-max))
+      (current-column)))
+
+  (defun lsp-ui-doc--truncate (len s &optional suffix)
+    (let ((suffix (or suffix "")))
+      (if (> (lsp-ui-doc--inline-width-string s) len)
+          (format (concat "%s" suffix) (substring s 0 (max (- len (length suffix)) 0)))
+        s)))
+
+  (defun lsp-ui-doc--inline-width-string (string)
+    "Returns numbers of characters that are display in STRING.
+Use because `string-width' counts invisible characters."
+    (with-temp-buffer
+      (insert string)
+      (goto-char (point-max))
+      (current-column)))
+
+  (defun lsp-ui-doc--inline-line-number-width ()
+    "Return the line number width."
+    (+ (if (bound-and-true-p display-line-numbers-mode)
+           (+ 2 (line-number-display-width))
+         0)
+       (if (bound-and-true-p linum-mode)
+           (cond ((stringp linum-format) linum-format)
+                 ((eq linum-format 'dynamic)
+                  (+ 2 (length (number-to-string
+                                (count-lines (point-min) (point-max)))))))
+         0)))
+
+
+  (defun lsp-ui-doc--inline-zip (s1 s2)
+    (let* ((width (- (window-body-width) (lsp-ui-doc--inline-line-number-width) 2))
+           (max-s1 (- width lsp-ui-doc--inline-width 2))
+           (spaces (- width (length s1) (lsp-ui-doc--inline-width-string s2))))
+      (lsp-ui-doc--truncate
+       width
+       (concat (lsp-ui-doc--truncate max-s1 s1) (make-string (max spaces 0) ?\s) s2)))))
+
+(use-package hover
+  :ensure t)
+
 (provide 'code-config)
 ;;; code-config.el ends here

@@ -4,6 +4,10 @@
 ;;; Code:
 
 (add-to-list 'custom-theme-load-path "~/.emacs.d/config/")
+
+(use-package gruvbox-theme
+  :ensure t)
+
 (load-theme 'gruvbox t)
 
 (use-package powerline

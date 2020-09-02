@@ -1,6 +1,6 @@
 (use-modules (vup patches))
 
-(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent)
+(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss)
 
 (use-modules (vup rust-nightly))
 (use-modules (vup misc))
@@ -97,7 +97,8 @@
   gst-plugins-bad
   gst-plugins-base
   gst-plugins-ugly
-  clang
+  clang-10
+  (list clang-10 "extra")
   imagemagick
   ghostscript
   smartmontools
@@ -105,6 +106,8 @@
   xclip
   qbittorrent
   openocd
+  python-antfs-cli
+  ripgrep
 
   ; games
   crawl-tiles
@@ -169,6 +172,7 @@
   python-libusb1
   python-joblib
   python-intelhex
+  pypy3
 
   ; compression
   lz4
@@ -189,7 +193,6 @@
   xrandr
 
   ; multimedia
-  ungoogled-chromium
   mpv
 
   ; fonts
@@ -243,4 +246,7 @@
   ninja
   alsa-lib
   libevent
+  nspr
+  java-swt
+  libtool
   ))

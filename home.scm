@@ -4,7 +4,7 @@
 (use-home-modules utils)
 
 (use-modules (gnu))
-(use-package-modules xdisorg admin glib pulseaudio wm emacs ncurses tmux dunst messaging irc terminals compression xorg)
+(use-package-modules xdisorg admin glib pulseaudio wm ncurses tmux dunst messaging irc terminals compression xorg rust-apps)
 
 (use-modules (gnu system keyboard))
 (use-modules (gnu services xorg))
@@ -19,10 +19,13 @@
 (use-modules (vup ip_addr))
 (use-modules (vup i3-gaps))
 (use-modules (vup telegram))
+(use-modules (vup emacs))
 
 (use-modules (srfi srfi-1)) ; fold-right ((
 (use-modules (ice-9 rdelim))
 (use-modules (ice-9 match))
+
+(define emacs emacs-pgtk-native-comp-no-xwidgets)
 
 (define (reader-extension-raw-string chr port)
 ; open-close choices
@@ -506,13 +509,14 @@ export PROMPT_COMMAND=\"${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; histo
 HISTSIZE=
 HISTFILESIZE=
 
-export EDITOR='TERM=xterm-24bits emacsclient -c -t'
+export EDITOR='TERM=xterm-24bits " #$(file-append emacs "/bin/emacsclient") " -c -t'
 export VISUAL=$EDITOR
 
 export RUST_SRC_PATH=" #$(file-append rust-nightly-src "/src")"
+export PATH=\"$PATH:/data/projects/dias/dart-sdk/flutter/bin\"
 
-alias ls='exa --color=auto'
-alias l='exa -la'
+alias ls='" #$(file-append exa "/bin/exa") " --color=auto'
+alias l='ls -la'
 
 alias grep='grep --color=auto'
 
@@ -752,7 +756,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
      `(,#$(file-append emacs "/bin/emacs") "--daemon"))
     #:stop
     (make-system-destructor
-     '("emacsclient" "--eval" "(let (kill-emacs-hook) (kill-emacs))"))))
+     '(,#$(file-append emacs "/bin/emacsclient") "--eval" "(let (kill-emacs-hook) (kill-emacs))"))))
 
 (define (make-simple-fork-constructor command)
   (lambda _
@@ -1233,7 +1237,6 @@ setw -g window-status-current-format \"#[fg=colour237,bg=colour214,nobold,nounde
 (define notifymuch-config
   (plain-file "notifymuch.cfg" "[notifymuch]
 query = is:unread
-mail_client = emacsclient -c -e '(notmuch)'
 recency_interval_hours = 0
 hidden_tags = inbox unread attachment replied sent encrypted signed"))
 
@@ -1305,6 +1308,7 @@ set keymap vi-command
     (symlink-file-home "/data/.flutter_settings" ".flutter_settings")      ; fuck it
     (symlink-file-home "/data/.pub-cache" ".pub-cache")      ; fuck it
     (symlink-file-home "/data/.vpython-root" ".vpython-root")      ; fuck it
+    (symlink-file-home "/data/.dartServer" ".dartServer")      ; fuck it
     (symlink-file-home "/data/.vpython_cipd_cache" ".vpython_cipd_cache")      ; fuck it
     (symlink-file-home "/data/texmf" "texmf") ; TODO(robin): rework this to static files in the store? (or build packages for the few missing things)
     (symlink-file-home "/data/robin/.config/chromium" ".config/chromium")))
