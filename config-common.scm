@@ -124,7 +124,9 @@
 
     ,(pam-limits-service
       (list
-       (pam-limits-entry "robin" 'both 'nofile 100000)))
+       (pam-limits-entry "robin" 'both 'nofile 100000)
+       (pam-limits-entry "@audio" 'both 'rtprio 99)
+       (pam-limits-entry "@audio" 'both 'memlock 'unlimited)))
 
     ,(service ntp-service-type)
     ,(service openssh-service-type
