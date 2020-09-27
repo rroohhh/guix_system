@@ -4,7 +4,7 @@
 (use-home-modules utils)
 
 (use-modules (gnu))
-(use-package-modules xdisorg admin glib pulseaudio wm ncurses tmux dunst messaging irc terminals compression xorg rust-apps)
+(use-package-modules xdisorg admin glib pulseaudio wm ncurses tmux dunst messaging irc terminals compression xorg rust-apps linux)
 
 (use-modules (gnu system keyboard))
 (use-modules (gnu services xorg))
@@ -1244,6 +1244,10 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
   (plain-file "defaults.list" "[Default Applications]
 application/pdf=org.gnome.Evince.desktop;"))
 
+(define gtk3-settings
+  (plain-file "settings.ini" "[Settings]
+gtk-application-prefer-dark-theme = true"))
+
 (define inputrc
   (plain-file "inputrc" (string-append "set editing-mode vi
 set keymap vi-command
@@ -1251,6 +1255,40 @@ set keymap vi-command
 \"j\": nop
 " (keys up) ": previous-history
 " (keys down) ": next-history")))
+
+(define asoundrc
+  (computed-file
+    "asoundrc"
+    #~(with-output-to-file
+        #$output
+        (lambda _
+          (set-port-encoding! (current-output-port) "UTF-8")    ;; shitty hack for unicode to work
+          (format #t "~a"
+            (string-append
+"pcm_type.jack {
+  lib \"" #$alsa-plugins:jack "/lib/alsa-lib/libasound_module_pcm_jack.so"  "\"
+}
+
+pcm.rawjack {
+  type jack
+  playback_ports {
+    0 system:playback_1
+    1 system:playback_2
+  }
+
+  capture_ports {
+    0 system:capture_1
+    1 system:capture_2
+  }
+}
+
+pcm.!default {
+  type plug
+  slave {
+    pcm \"rawjack\"
+  }
+}"
+                 )))))) ;; this newline is necessary for i3block to get the last config item
 
 
 (home "/data/robin"
@@ -1263,7 +1301,9 @@ set keymap vi-command
     (simple-file-home rofi-config ".config/rofi/config.rasi")
     (simple-file-home notifymuch-config ".config/notifymuch/notifymuch.cfg")
     (simple-file-home tmux-config ".tmux.conf")
+    (simple-file-home asoundrc ".asoundrc")
     (simple-file-home inputrc ".inputrc")
+    (simple-file-home gtk3-settings ".config/gtk-3.0/settings.ini")
     ;; (simple-file-home default-applications-config ".local/share/applications/defaults.list")
     emacs-terminfo
     (i3-home i3-config)
@@ -1290,6 +1330,7 @@ set keymap vi-command
     (symlink-file-home "/data/.config/skypeforlinux" ".config/skypeforlinux")  ; fuck it
     (symlink-file-home "/data/.config/unity3d" ".config/unity3d")  ; fuck it
     (symlink-file-home "/data/.config/dconf" ".config/dconf")  ; fuck it
+    (symlink-file-home "/data/.fastlane" ".fastlane")  ; fuck it
     (symlink-file-home "/data/.gradle" ".gradle")  ; fuck it
     (symlink-file-home "/data/.frida" ".frida")  ; fuck it
     (symlink-file-home "/data/.cargo" ".cargo")  ; fuck it
