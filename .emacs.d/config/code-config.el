@@ -95,8 +95,7 @@
 
 (use-package lsp-dart
   :ensure t
-  :init (setq lsp-dart-sdk-dir "/data/projects/dias/dart-sdk/flutter/bin/cache/dart-sdk/")
-  :hook (dart-mode . lsp))
+  :init (setq lsp-dart-sdk-dir "/data/projects/dias/dart-sdk/flutter/bin/cache/dart-sdk/"))
 
 (use-package lsp-ui
   :ensure t
@@ -145,6 +144,9 @@ Use because `string-width' counts invisible characters."
        (concat (lsp-ui-doc--truncate max-s1 s1) (make-string (max spaces 0) ?\s) s2)))))
 
 (use-package hover
+  :ensure t)
+
+(use-package realgud
   :ensure t)
 
 (provide 'code-config)
