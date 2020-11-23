@@ -340,6 +340,8 @@ ff = only"))
     '(#:local-build? #t
       #:modules ((guix build utils)))))
 
+(define xauthority-file "/data/robin/.Xauthority")
+
 (define bashrc
   (computed-file "bashrc"
     #~(with-output-to-file #$output
@@ -509,6 +511,8 @@ export PROMPT_COMMAND=\"${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; histo
 HISTSIZE=
 HISTFILESIZE=
 
+export XAUTHORITY=" #$xauthority-file "
+
 export EDITOR='TERM=xterm-24bits " #$(file-append emacs "/bin/emacsclient") " -c -t'
 export VISUAL=$EDITOR
 
@@ -538,7 +542,8 @@ alias vi=$EDITOR
  (srfi srfi-26))
 
 (define startx #$(xorg-start-command (xorg-configuration
-                       (keyboard-layout (keyboard-layout "de" "vup")))))
+                                      (keyboard-layout (keyboard-layout "de" "vup"))
+                                      (server-arguments `("-auth" ,xauthority-file)))))
 
 (define (environment-excursion env-thunk body-thunk)
   (let ((old-env (environ)))
@@ -661,22 +666,6 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (define (display-service-description display base-description)
   (format #f "~a (DISPLAY=~a)" base-description display))
 
-;; `make-display-service' procedure uses `plist-new', because ARGS (the
-;; #:rest argument) contains all keyword arguments (e.g., #:docstring),
-;; that needs to be shadowed, otherwise `make-service' will be called
-;; with 2 #:docstring arguments and may (and surely will) take the wrong
-;; one.  Illustration of the problem:
-;;
-;; (define* (p1 #:key str . args)
-;;   (values str args))
-;; (define* (p2 #:key str . args)
-;;   (apply p1 #:str (string-append str "-bar") args))
-;;
-;; (p2 #:str "foo")  =>  "foo"
-;;                   =>  (#:str "foo-bar" #:str "foo")
-;;
-;; The same takes place for `make-display-target'.
-
 (define* (make-display-service #:key display
                                (docstring "Unknown")
                                (provides '())
@@ -718,34 +707,6 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
     #:provides '(dbus)
     #:command (list #$(file-append dbus "/bin/dbus-daemon") "--session" "--nofork"
                    "--address" (%dbus-address display))))
-
-;; (define (run-gpg-agent)
-;;   "Run gpg-agent as daemon and set '%ssh-socket' according to its output.
-;; Return exit status of the gpg-agent."
-;;   (let* ((pinentry    (guix-user-profile-file "bin/pinentry"))
-;;          (gpg-command `("gpg-agent" "--daemon"
-;;                         ,@(if (file-exists? pinentry)
-;;                               (list "--pinentry-program" pinentry)
-;;                               '())))
-;;          (port        (apply open-pipe* OPEN_READ gpg-command))
-;;          (output      (read-string port))
-;;          (env-match   (string-match "\\`SSH_AUTH_SOCK=([^;]*)" output)))
-;;     (when env-match
-;;       (set! %ssh-socket (match:substring env-match 1)))
-;;     ;; XXX gpg-agent daemonizes too quickly, so we get a system error
-;;     ;; (waitpid: No child processes).  Just ignore it and return 0.
-;;     (catch #t
-;;       (lambda () (close-pipe port))
-;;       (const 0))))
-;; 
-;; (define gpg-agent
-;;   (make-service
-;;     #:docstring "GPG Agent"
-;;     #:provides '(gpg-agent)
-;;     #:start (lambda _
-;;               (zero? (status:exit-val (run-gpg-agent))))
-;;     #:stop (make-system-destructor
-;;             '("gpg-connect-agent" "killagent" "/bye"))))
 
 (define emacs-daemon
   (make-service
@@ -789,31 +750,6 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (define (xorg-service* display)
   (xorg-service #:display display
                 #:vt (display->vt display)))
-
-;; (define (setxkbmap-service display)
-;;   (make-simple-system-display-service display
-;;     #:docstring "setxkbmap"
-;;     #:provides '(setxkbmap)
-;;     #:command '("setxkbmap" "de" "vup")))
-
-;; (define (openbox-service display)
-;;   (make-simple-forkexec-display-service display
-;;     #:docstring "Openbox"
-;;     #:provides '(openbox wm)
-;;     #:command '("openbox")
-;;     #:actions
-;;     (make-actions
-;;      (reload
-;;       "Reload configuration file."
-;;       (make-system-constructor-with-env
-;;        '("openbox" "--reconfigure")
-;;        #:display display)))))
-;;
-;; (define (stumpwm-service display)
-;;   (make-simple-forkexec-display-service display
-;;     #:docstring "Stumpwm"
-;;     #:provides '(stumpwm wm)
-;;     #:command '("stumpwm")))
 
 (define (xkeylogger-service display)
   (make-simple-forkexec-display-service display
@@ -863,31 +799,18 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
      #:provides '(dunst)
      #:command `(,#$(file-append dunst "/bin/dunst"))))
 
+(define (redshift-service display)
+   (make-simple-forkexec-display-service display
+     #:docstring "Redshift"
+     #:provides '(redshift)
+     #:command `(,#$(file-append redshift "/bin/redshift") "-l" "49.4057072:8.6135749" "-b" "1.0:0.7" "-t" "6500k:2500k")))
+
 (define (natural-scrolling-service display)
    (make-simple-forkexec-display-service display
      #:one-shot? #t
      #:docstring "set natural scrolling"
      #:provides '(natural-scrolling)
      #:command `(,#$(file-append xinput "/bin/xinput") "set-prop" "TPPS/2 IBM TrackPoint" "libinput Natural Scrolling Enabled" "1")))
-
-
-;; (define (xterm-service display)
-;;   (make-simple-forkexec-display-service display
-;;     #:docstring "Xterm"
-;;     #:provides '(xterm)
-;;     #:command '("xterm")))
-;; 
-;; (define (emacs-service display)
-;;   (make-simple-forkexec-display-service display
-;;     #:docstring "Emacs"
-;;     #:provides '(emacs)
-;;     #:command '("emacs" "--no-site-file")))
-;; 
-;; (define (conkeror-service display)
-;;   (make-simple-forkexec-display-service display
-;;     #:docstring "Conkeror"
-;;     #:provides '(conkeror)
-;;     #:command '("conkeror")))
 
 (define (make-display-services display)
   (map (cut <> display)
@@ -902,6 +825,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
              dunst-service
              pavucontrol-service
              xkeylogger-service
+             redshift-service
              natural-scrolling-service
              )))
 
@@ -915,7 +839,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (start 'x:0)
 (start 'i3:0)
 (start 'dbus:0)
-(start 'pulseaudio:0)
+;; (start 'pulseaudio:0)
 (start 'dunst:0)
 (start 'pavucontrol:0)
 (start 'tmux:0)
@@ -924,8 +848,8 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (start 'quasselclient:0)
 (start 'telegram:0)
 (start 'xkeylogger:0)
-(start 'natural-scrolling:0)
-)))
+;; (start 'redshift:0)
+(start 'natural-scrolling:0))))
 
 (define bash_profile
   (mixed-text-file "bash_profile"
@@ -1287,8 +1211,7 @@ pcm.!default {
   slave {
     pcm \"rawjack\"
   }
-}"
-                 )))))) ;; this newline is necessary for i3block to get the last config item
+}"))))))
 
 
 (home "/data/robin"
@@ -1325,11 +1248,13 @@ pcm.!default {
     (symlink-file-home "/data/projects/guix_system/.emacs.d" ".emacs.d") ; TODO(robin): figure out this one
     (symlink-file-home "/data/projects/guix_system/.clang-format" ".clang-format") ; TODO(robin): figure out this one
     (symlink-file-home "/data/robin/.texlive2018" ".texlive2018")
+    (symlink-file-home "/data/robin/.texlive2019" ".texlive2019")
     (symlink-file-home "/data/robin/.Xilinx" ".Xilinx")
     (symlink-file-home "/data/.config/configstore" ".config/configstore")  ; fuck it
     (symlink-file-home "/data/.config/skypeforlinux" ".config/skypeforlinux")  ; fuck it
     (symlink-file-home "/data/.config/unity3d" ".config/unity3d")  ; fuck it
     (symlink-file-home "/data/.config/dconf" ".config/dconf")  ; fuck it
+    (symlink-file-home "/data/.config/pmbootstrap.cfg" ".config/pmbootstrap.cfg")  ; fuck it
     (symlink-file-home "/data/.fastlane" ".fastlane")  ; fuck it
     (symlink-file-home "/data/.gradle" ".gradle")  ; fuck it
     (symlink-file-home "/data/.frida" ".frida")  ; fuck it
@@ -1343,6 +1268,9 @@ pcm.!default {
     (symlink-file-home "/data/.FreeCAD/" ".FreeCAD")      ; fuck it
     (symlink-file-home "/data/.factorio" ".factorio")      ; fuck it
     (symlink-file-home "/data/.m2" ".m2")      ; fuck it
+    (symlink-file-home "/data/.elm" ".elm")      ; fuck it
+    (symlink-file-home "/data/.xournalpp" ".xournalpp")      ; fuck it
+    (symlink-file-home "/data/.jupyter" ".jupyter")      ; fuck it
     (symlink-file-home "/data/.tabula" ".tabula")      ; fuck it
     (symlink-file-home "/data/.flutter_tool_state" ".flutter_tool_state")      ; fuck it
     (symlink-file-home "/data/.flutter" ".flutter")      ; fuck it
