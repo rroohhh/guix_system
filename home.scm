@@ -1276,6 +1276,7 @@ pcm.!default {
     (symlink-file-home "/data/.elm" ".elm")      ; fuck it
     (symlink-file-home "/data/.xournalpp" ".xournalpp")      ; fuck it
     (symlink-file-home "/data/.jupyter" ".jupyter")      ; fuck it
+    (symlink-file-home "/data/.xpra" ".xpra")      ; fuck it
     (symlink-file-home "/data/.tabula" ".tabula")      ; fuck it
     (symlink-file-home "/data/.flutter_tool_state" ".flutter_tool_state")      ; fuck it
     (symlink-file-home "/data/.flutter" ".flutter")      ; fuck it
