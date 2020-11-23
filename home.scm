@@ -1213,6 +1213,9 @@ pcm.!default {
   }
 }"))))))
 
+(define ssh-environment
+  (plain-file "environment" (string-append "XAUTHORITY=" xauthority-file)))
+
 
 (home "/data/robin"
   (list
@@ -1227,6 +1230,7 @@ pcm.!default {
     (simple-file-home asoundrc ".asoundrc")
     (simple-file-home inputrc ".inputrc")
     (simple-file-home gtk3-settings ".config/gtk-3.0/settings.ini")
+    (simple-file-home ssh-environment ".ssh/environment")
     ;; (simple-file-home default-applications-config ".local/share/applications/defaults.list")
     emacs-terminfo
     (i3-home i3-config)
