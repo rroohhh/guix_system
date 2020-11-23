@@ -90,7 +90,6 @@
 
     (kernel linux-nonfree)
     (firmware (append (list linux-firmware-nonfree) %base-firmware))
-
     (groups (append %base-groups
                     (list
                      (user-group (system? #t) (name "adbusers"))
@@ -104,7 +103,7 @@
                      (group "users")
                      (supplementary-groups '("lp" "wheel" "netdev"
                                              "audio" "video" "docker" "adbusers"
-                                             "kvm" "pulse-access")))
+                                             "kvm" "pulse-access" "libvirt")))
                     (user-account
                      (name "pulse")
                      (group "pulse")
@@ -137,6 +136,8 @@
     ,(service polkit-service-type)
     ,(elogind-service)
     ,(dbus-service)
+    ,(accountsservice-service)
+    ,(service localed-service-type)
 
     ,(pam-limits-service
       (list
