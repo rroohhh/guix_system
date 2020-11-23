@@ -1254,6 +1254,7 @@ pcm.!default {
     (symlink-file-home "/data/robin/.texlive2018" ".texlive2018")
     (symlink-file-home "/data/robin/.texlive2019" ".texlive2019")
     (symlink-file-home "/data/robin/.Xilinx" ".Xilinx")
+    (symlink-file-home "/data/.config/guix-gaming-channels" ".config/guix-gaming-channels")  ; fuck it
     (symlink-file-home "/data/.config/configstore" ".config/configstore")  ; fuck it
     (symlink-file-home "/data/.config/skypeforlinux" ".config/skypeforlinux")  ; fuck it
     (symlink-file-home "/data/.config/unity3d" ".config/unity3d")  ; fuck it
