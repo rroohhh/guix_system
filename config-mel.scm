@@ -37,8 +37,8 @@
        (check? #f)))
     %base-file-systems))
 
-  (services (append common-services 
-                    (list 
+  (services (append common-services
+                    (list
                       (service wpa-supplicant-service-type)
                       (service connman-service-type
                             (connman-configuration))))))

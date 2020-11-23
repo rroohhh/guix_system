@@ -3,6 +3,37 @@
 (use-modules (my-tlp))
 (use-modules (config-common))
 
+(use-modules (guix gexp))
+(use-modules (guix packages))
+(use-modules (guix git-download))
+(use-modules (guix build-system gnu))
+(use-modules ((guix licenses) #:prefix license:))
+
+(use-modules (gnu packages mail))
+(use-modules (gnu packages glib))
+(use-modules (gnu packages autotools))
+(use-modules (gnu packages gnome))
+(use-modules (gnu packages linux))
+(use-modules (gnu packages readline))
+(use-modules (gnu packages documentation))
+(use-modules (gnu packages pulseaudio))
+(use-modules (gnu packages pkg-config))
+(use-modules (gnu packages python))
+(use-modules (gnu packages tls))
+
+(use-modules (gnu services shepherd))
+(use-modules (gnu services linux))
+(use-modules (gnu services networking))
+(use-modules (gnu services dbus))
+(use-modules (gnu services desktop))
+(use-modules (gnu services mcron))
+
+(use-modules (gnu system mapped-devices))
+(use-modules (gnu system uuid))
+(use-modules (gnu system file-systems))
+
+(use-modules (vup misc))
+
 (define-public iwd
   (package
     (name "iwd")
@@ -89,14 +120,40 @@ maximum extent possible.")
                                             iwd-package)))
                   (default-value '())
                   (description
-                   "Run @url{https://01.org/iwd,iwd},
-a wpa-supplicant replacemennt."))))
+                   "Run @url{https://01.org/iwd,iwd}, a wpa-supplicant replacemennt."))))
+
+
+(define-public (ofono-shepherd-service _)
+  "Return a shepherd service for ofono"
+  (list (shepherd-service
+         (documentation "Run ofono")
+         (provision '(ofono))
+         (requirement
+          `(user-processes dbus-system loopback))
+         (start #~(make-forkexec-constructor
+                   (list (string-append #$ofono
+                                        "/sbin/ofonod") "-n")))
+         (stop #~(make-kill-destructor)))))
+
+
+(define-public ofono-service-type
+  (let ((ofono-package (lambda (_) (list ofono))))
+    (service-type (name 'ofono)
+                  (extensions
+                   (list (service-extension shepherd-root-service-type
+                                            ofono-shepherd-service)
+                         (service-extension dbus-root-service-type
+                                            ofono-package)))
+                  (default-value '())
+                  (description
+                   "Run @url{https://01.org/ofono,ofono}"))))
 
 (operating-system
   (inherit common-system-config)
   (host-name "transistor")
 
-  (kernel-arguments '("--rootflags=compress=zstd,discard,subvolid=54188,subvol=@guix_root,acl" "mitigations=off"))
+  ;; almost always swap, zram is nice
+  (kernel-arguments '("--rootflags=compress=zstd,discard,subvolid=54188,subvol=@guix_root,acl" "mitigations=off" "vm.swappiness=200"))
 
   (mapped-devices
    (list (mapped-device
@@ -147,7 +204,9 @@ a wpa-supplicant replacemennt."))))
 
      (service zram-device-service-type
               (zram-device-configuration
-               (size "8G")
+               (size "16G")
                (compression-algorithm 'lz4)))
 
-     (service iwd-service-type)))))
+     (service network-manager-service-type)
+     (service wpa-supplicant-service-type)
+     (service ofono-service-type)))))

@@ -1,5 +1,8 @@
 (define-module (config-common))
 
+(add-to-load-path (dirname (current-filename))) ; for my-tlp.scm
+(use-modules (pulseaudio))
+
 (use-modules (vup patches)) ; really bad hacks, but who cares
 
 (use-modules (gnu) (gnu system nss))
@@ -75,39 +78,51 @@
     (timezone "Europe/Berlin")
     (locale "en_US.utf8")
     (keyboard-layout (keyboard-layout "de" "vup"))
-  
+
     (bootloader (bootloader-configuration
                  (bootloader grub-efi-bootloader)
                  (target "/boot/efi")
                  (keyboard-layout keyboard-layout)))
-  
+
     (setuid-programs (append (list
                               (file-append hwinfo "/bin/hwinfo"))
                              %setuid-programs))
-  
+
     (kernel linux-nonfree)
     (firmware (append (list linux-firmware-nonfree) %base-firmware))
-  
-    (groups (append %base-groups (list (user-group (system? #t) (name "adbusers")))))
-  
-    (users (cons (user-account
-                  (name "robin")
-                  (comment "owner")
-                  (group "users")
-                  (supplementary-groups '("lp" "wheel" "netdev"
-                                          "audio" "video" "docker" "adbusers"
-                                          "kvm")))
-                 %base-user-accounts))
+
+    (groups (append %base-groups
+                    (list
+                     (user-group (system? #t) (name "adbusers"))
+                     (user-group (system? #t) (name "pulse"))
+                     (user-group (system? #t) (name "pulse-access")))))
+
+    (users (append (list
+                    (user-account
+                     (name "robin")
+                     (comment "owner")
+                     (group "users")
+                     (supplementary-groups '("lp" "wheel" "netdev"
+                                             "audio" "video" "docker" "adbusers"
+                                             "kvm" "pulse-access")))
+                    (user-account
+                     (name "pulse")
+                     (group "pulse")
+                     (home-directory "/var/run/pulse")
+                     (create-home-directory? #f)
+                     (system? #t)
+                     (supplementary-groups '("audio" "lp")))) ; lp for bluetooth access
+                   %base-user-accounts))
 
     (file-systems '())
-  
+
     (packages
      (append
       (list
        openssh vim
        nss-certs) ;; for HTTPS access
       %base-packages))
-  
+
     ;; Allow resolution of '.local' host names with mDNS.
     ;; no idea what this does
     (name-service-switch %mdns-host-lookup-nss)))
@@ -117,6 +132,7 @@
     ,(service root-remount-service-type)
     ,(service docker-service-type)
     ,(service cups-pk-helper-service-type)
+    ,(service pulseaudio-service-type)
 
     ,(service polkit-service-type)
     ,(elogind-service)
@@ -127,18 +143,20 @@
        (pam-limits-entry "robin" 'both 'nofile 100000)
        (pam-limits-entry "@audio" 'both 'rtprio 99)
        (pam-limits-entry "@audio" 'both 'memlock 'unlimited)))
-
+    ,(service avahi-service-type)
+    ,(service modem-manager-service-type)
     ,(service ntp-service-type)
     ,(service openssh-service-type
               (openssh-configuration
                (x11-forwarding? #t)
                (authorized-keys
-                `(("robin" ,(local-file "robin.pub"))))))
+                `(("robin" ,(local-file "robin.pub"))))
+	       (extra-content "PermitUserEnvironment yes")))
     ,@(modify-services %base-services
-          (udev-service-type config =>
-                         (udev-configuration
-                          (inherit config)
-                          (rules
-                           (append
-                            (udev-configuration-rules config)
-                            (list android-udev-rules python-openant/udev trackpoint-udev-config))))))))
+        (udev-service-type config =>
+                           (udev-configuration
+                            (inherit config)
+                            (rules
+                             (append
+                              (udev-configuration-rules config)
+                              (list android-udev-rules python-openant/udev trackpoint-udev-config))))))))
