@@ -145,6 +145,7 @@
   :init
   (setq beacon-push-mark 0)
   (setq beacon-color "#666600")
+  (setq beacon-blink-when-focused t)
   :config
   (beacon-mode 1))
 
@@ -207,6 +208,7 @@
 (use-package undo-tree
   :diminish undo-tree-mode
   :init
+  (setq undo-limit 10000)
   (setq undo-tree-visualizer-diff t)
   (setq undo-tree-auto-save-history t)
   (setq undo-tree-history-directory-alist
@@ -226,6 +228,11 @@
   :hook (prog-mode . rainbow-mode))
 
 (use-package csv-mode)
+
+
+(require 'col-highlight)
+(column-highlight-mode)
+(set-face-background 'col-highlight "midnight blue")
 
 (provide 'main-config)
 ;;; main-config.el ends here

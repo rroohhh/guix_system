@@ -12,8 +12,8 @@
 
 (evil-define-key 'normal rust-mode-map (kbd "öö") 'rust-format-buffer)
 
-(use-package flycheck-rust
-  :hook (flycheck-mode . flycheck-rust-setup))
+; (use-package flycheck-rust
+;   :hook (flycheck-mode . flycheck-rust-setup))
 
 (provide 'rust-config)
 ;;; rust-config ends here

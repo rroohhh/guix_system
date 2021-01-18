@@ -9,15 +9,15 @@
   (yas-global-mode)
   (setq yas-triggers-in-field t))
 
-(use-package flycheck
-  :diminish flycheck-mode
-  :config
-  (global-flycheck-mode))
+; (use-package flycheck
+;   :diminish flycheck-mode
+;   :config
+;   (global-flycheck-mode))
 
-(use-package smartparens
-  :diminish smartparens-mode
-  :config
-  (add-hook 'prog-mode-hook #'smartparens-mode))
+;; (use-package smartparens
+;;   :diminish smartparens-mode
+;;   :config
+;;   (add-hook 'prog-mode-hook #'smartparens-mode))
 
 (use-package smart-comment
   :config
