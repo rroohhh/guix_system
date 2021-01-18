@@ -1,13 +1,17 @@
 (use-modules (vup patches))
 
-(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss)
+(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation)
 
 (use-modules (vup rust-nightly))
+(use-modules (vup fastlane))
+(use-modules (vup qt-apps))
+(use-modules (vup freecad))
+(use-modules (vup emacs))
+(use-modules (vup root))
+(use-modules (vup mesa))
 (use-modules (vup misc))
 (use-modules (vup fpga))
 (use-modules (vup python-xyz))
-(use-modules (vup lld))
-(use-modules (vup biber-old))
 (use-modules (vup horizon))
 (use-modules (vup unrar))
 (use-modules (vup x))
@@ -48,13 +52,14 @@
   adb
   rust-nightly
   (list rust-nightly "doc")
-  lld-10
+  lld
   wireshark
   (list isc-bind "utils")
   xdg-utils
   xorg-server
   qpdf
   openmpi
+  wine-staging
   wine64-staging
   horizon
   baobab
@@ -93,12 +98,13 @@
   p7zip
   glade3
   gstreamer
+  gstreamer-vaapi
   gst-plugins-good
   gst-plugins-bad
   gst-plugins-base
   gst-plugins-ugly
-  clang-10
-  (list clang-10 "extra")
+  clang-11
+  (list clang-11 "extra")
   imagemagick
   ghostscript
   smartmontools
@@ -108,16 +114,71 @@
   openocd
   python-antfs-cli
   ripgrep
+  efibootmgr
+  qrencode
+  usbmuxd
+  git
+  emacs-pgtk-native-comp-no-xwidgets
+  ;; arcan
+  inkscape
+  poppler
+  ruby-fastlane
+  qdirstat
+  xinput
+  dos2unix
+  openblas
+  lapack
+  xhost
+  xauth
+  sshfs
+  tcpdump
+  root
+  sigrok-cli
+  pulseview
+  obs
+  paprefs
+  pasystray
+  d-feet
+  aircrack-ng
+  mtr
+  xournalpp
+  net-tools
+  darktable
+  protobuf
+  spirv-tools
+  vulkan-tools
+  vulkan-loader
+  vulkan-headers
+  ungoogled-chromium
+  powerstat
+  mesa-fixed
+  graphene
+  pulseaudio
+  ;; opencv temporary
+  glslang
+  astroid
+  jq
+  network-manager-applet
+  lsof
+
+  ; wacom
+  xf86-input-wacom
+
+  ; vaapi
+  libva
+  libva-utils
+  intel-vaapi-driver
 
   ; games
   crawl-tiles
 
   ; cad
-  ;; freecad currently broken
+  ;; freecad-fixed temporary
   solvespace
 
   ; lang
   go
+  swi-prolog
 
   ; java
   (list icedtea "jdk")
@@ -129,7 +190,7 @@
 
   ; latex
   texlive
-  biber-2.11
+  biber
   python-pygments ; minted
   ;; texlive-luatex-luaotfload ; broken
 
@@ -141,8 +202,12 @@
   python-nmigen-soc
   yosys-git
   nextpnr
+  icestorm
+  symbiyosys
 
   ; python
+  python-wrapper
+  python-flameprof
   python-pyyaml
   python-sortedcontainers
   python-toposort
@@ -172,9 +237,35 @@
   python-libusb1
   python-joblib
   python-intelhex
+  python-networkx
+  python-shapely-fixed
+  ;; python-descartes
+  jupyter
+  python-dill
+  python-multiprocess
+  python-loky
+  python-billiard
+  python-line-profiler
+  python-tables
+  python-pmbootstrap
   pypy3
+  python-dbus
+  python-mypy
+  python-pytest
+  python-bitstring
+  python-imageio
+  python-numba
+
+  ; music
+  jack-1
+  alsa-utils
+  gxtuner
+  rakarrack
+  qjackctl
+  ;; powertabeditor
 
   ; compression
+  zip
   lz4
   unzip
   bzip2
@@ -213,9 +304,7 @@
   cairomm
   glib
   (list glib "bin")
-  vulkan-loader
   ncurses
-  gnu-make
   pkg-config
   automake
   autoconf
@@ -225,6 +314,7 @@
   boost
   fuse
   gcc-toolchain-10
+  gfortran-toolchain
   cmake
   expat
   qtbase
@@ -235,7 +325,7 @@
   libxcursor
   libxrandr
   libxi
-  mesa
+  mesa-fixed
   glu
   freeglut
   libxcb
@@ -243,10 +333,22 @@
   xcb-util
   freetype
   libinput
-  ninja
+  ;; ninja
   alsa-lib
   libevent
   nspr
   java-swt
   libtool
+  libsodium
+  libimobiledevice
+  libxpm
+  libxml2
+  libxkbfile
+  libsecret
+  asciidoc
+  fftw
+  gsl
+  cfitsio
+  sdl2
+  glfw
   ))

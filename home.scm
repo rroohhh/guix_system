@@ -314,10 +314,13 @@ key_bindings:
 
 (define gitconfig
   (plain-file "gitconfig" "[user]
-        email = robin.ole.heinemann@t-online.de
+        email = robin.ole.heinemann@gmail.com
         name = Robin Ole Heinemann
 [pull]
-ff = only"))
+ff = only
+
+[init]
+defaultBranch = main"))
 
 (define rust-nightly-full
   (package
@@ -499,6 +502,8 @@ set -o vi
 
 source " #$(file-append go-github-com-junegunn-fzf "/src/github.com/junegunn/fzf/shell/key-bindings.bash") "
 
+source /run/current-system/profile/etc/profile.d/nix.sh
+
 export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
  --color=fg:"     #$(theme* fg)     ",bg:"      #$(theme* bg)      ",hl:"      #$(theme* yellow) "
  --color=fg+:"    #$(theme* fg)     ",bg+:"     #$(theme* bg1)     ",hl+:"     #$(theme* red)    "
@@ -518,7 +523,11 @@ export VISUAL=$EDITOR
 
 export RUST_SRC_PATH=" #$(file-append rust-nightly-src "/src")"
 export PATH=\"$PATH:/data/projects/dias/dart-sdk/flutter/bin\"
+export LM_LICENSE_FILE=/data/projects/fpga/diamond/license.dat
 
+export LD_LIBRARY_PATH='" #$(file-append pipewire-0.3 "/${LIB}/pipewire-0.3/jack") "'\"${LD_LIBRARY_PATH+\":$LD_LIBRARY_PATH\"}\"
+
+alias pw-jack=" #$(file-append pipewire-0.3 "/bin/pw-jack") "
 alias ls='" #$(file-append exa "/bin/exa") " --color=auto'
 alias l='ls -la'
 
@@ -736,6 +745,27 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
                       (run-command (list #$(file-append pulseaudio "/bin/pulseaudio") "--start"))))
     #:stop (make-kill-destructor)))
 
+(define (pipewire-service display)
+  (make-simple-forkexec-display-service display
+    #:docstring "Pipewire daemon"
+    #:requires '(dbus)
+    #:provides '(pipewire)
+    #:command `(,#$(file-append pipewire-0.3 "/bin/pipewire"))))
+
+(define (pipewire-media-session-service display)
+  (make-simple-forkexec-display-service display
+    #:docstring "Pipewire media session daemon"
+    #:requires '(pipewire)
+    #:provides '(pipewire-media-session)
+    #:command `(,#$(file-append pipewire-0.3 "/bin/pipewire-media-session"))))
+
+(define (pipewire-pulse-service display)
+  (make-simple-forkexec-display-service display
+    #:docstring "Pipewire pulse daemon"
+    #:requires '(pipewire)
+    #:provides '(pipewire-pulse)
+    #:command `(,#$(file-append pipewire-0.3 "/bin/pipewire-pulse"))))
+
 (define* (xorg-command #:key (display ":0") (vt "vt1"))
   `(,startx "-keeptty" ,display ,vt))
 
@@ -815,6 +845,9 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (define (make-display-services display)
   (map (cut <> display)
        (list xorg-service*
+             pipewire-service
+             pipewire-pulse-service
+             pipewire-media-session-service
              i3-service
              pulseaudio-service
              dbus
@@ -832,14 +865,16 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 (apply register-services
        (append
      (list
-       emacs-daemon)
+      emacs-daemon)
      (make-display-services ":0")))
 
 (action 'shepherd 'daemonize)
 (start 'x:0)
 (start 'i3:0)
 (start 'dbus:0)
-;; (start 'pulseaudio:0)
+(start 'pipewire:0)
+(start 'pipewire-media-session:0)
+(start 'pipewire-pulse:0)
 (start 'dunst:0)
 (start 'pavucontrol:0)
 (start 'tmux:0)
@@ -1214,6 +1249,7 @@ pcm.!default {
 }"))))))
 
 (define ssh-environment
+
   (plain-file "environment" (string-append "XAUTHORITY=" xauthority-file)))
 
 
@@ -1259,10 +1295,19 @@ pcm.!default {
     (symlink-file-home "/data/.config/skypeforlinux" ".config/skypeforlinux")  ; fuck it
     (symlink-file-home "/data/.config/unity3d" ".config/unity3d")  ; fuck it
     (symlink-file-home "/data/.config/dconf" ".config/dconf")  ; fuck it
+    (symlink-file-home "/data/.config/astroid" ".config/astroid")  ; fuck it
     (symlink-file-home "/data/.config/pmbootstrap.cfg" ".config/pmbootstrap.cfg")  ; fuck it
+    (symlink-file-home "/data/.config/VSCodium" ".config/VSCodium")  ; fuck it
+    (symlink-file-home "/data/.config/Code" ".config/Code")  ; fuck it
+    (symlink-file-home "/data/.config/pipewire-media-session" ".config/pipewire-media-session")  ; fuck it
     (symlink-file-home "/data/.fastlane" ".fastlane")  ; fuck it
     (symlink-file-home "/data/.gradle" ".gradle")  ; fuck it
     (symlink-file-home "/data/.frida" ".frida")  ; fuck it
+    (symlink-file-home "/data/.npmrc" ".npmrc")  ; fuck it
+    (symlink-file-home "/data/.yarnrc" ".yarnrc")  ; fuck it
+    (symlink-file-home "/data/.yarn" ".yarn")  ; fuck it
+    (symlink-file-home "/data/.vscode" ".vscode")  ; fuck it
+    (symlink-file-home "/data/.vscode-oss" ".vscode-oss")  ; fuck it
     (symlink-file-home "/data/.cargo" ".cargo")  ; fuck it
     (symlink-file-home "/data/.fonts" ".fonts")  ; fuck it
     (symlink-file-home "/data/.npm" ".npm")      ; fuck it
@@ -1273,11 +1318,17 @@ pcm.!default {
     (symlink-file-home "/data/.FreeCAD/" ".FreeCAD")      ; fuck it
     (symlink-file-home "/data/.factorio" ".factorio")      ; fuck it
     (symlink-file-home "/data/.m2" ".m2")      ; fuck it
+    (symlink-file-home "/data/.aws" ".aws")      ; fuck it
     (symlink-file-home "/data/.elm" ".elm")      ; fuck it
     (symlink-file-home "/data/.xournalpp" ".xournalpp")      ; fuck it
     (symlink-file-home "/data/.jupyter" ".jupyter")      ; fuck it
     (symlink-file-home "/data/.xpra" ".xpra")      ; fuck it
     (symlink-file-home "/data/.tabula" ".tabula")      ; fuck it
+    (symlink-file-home "/data/.amplify" ".amplify")      ; fuck it
+    (symlink-file-home "/data/.nix-defexpr" ".nix-defexpr")      ; fuck it
+    (symlink-file-home "/data/.nix-channels" ".nix-channels")      ; fuck it
+    (symlink-file-home "/data/.nixpkgs" ".nixpkgs")      ; fuck it
+    (symlink-file-home "/nix/var/nix/profiles/per-user/robin/profile" ".nix-profile")      ; fuck it
     (symlink-file-home "/data/.flutter_tool_state" ".flutter_tool_state")      ; fuck it
     (symlink-file-home "/data/.flutter" ".flutter")      ; fuck it
     (symlink-file-home "/data/.flutter_settings" ".flutter_settings")      ; fuck it

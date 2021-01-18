@@ -12,7 +12,7 @@
 (use-package-modules bootloaders certs wm suckless xorg linux ssh emacs vim version-control mail connman polkit vpn samba admin glib autotools readline documentation pkg-config python tls android rust-apps)
 
 (use-modules (gnu services))
-(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking ssh linux)
+(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking ssh linux nix cups)
 
 (use-modules (vup linux))
 (use-modules (vup python-xyz))
@@ -26,7 +26,7 @@
 (use-modules (guix build-system trivial))
 (use-modules ((guix licenses) #:prefix license:))
 
-(define-public linux-nonfree/btrfs_zstd
+(define-public linux-nonfree/extra_config
   (package
     (inherit linux-nonfree)
     (native-inputs
@@ -88,10 +88,11 @@
                               (file-append hwinfo "/bin/hwinfo"))
                              %setuid-programs))
 
-    (kernel linux-nonfree)
+    (kernel linux-nonfree/extra_config)
     (firmware (append (list linux-firmware-nonfree) %base-firmware))
     (groups (append %base-groups
                     (list
+                     (user-group (system? #t) (name "libvirt"))
                      (user-group (system? #t) (name "adbusers"))
                      (user-group (system? #t) (name "pulse"))
                      (user-group (system? #t) (name "pulse-access")))))
@@ -131,7 +132,15 @@
     ,(service root-remount-service-type)
     ,(service docker-service-type)
     ,(service cups-pk-helper-service-type)
-    ,(service pulseaudio-service-type)
+;    ,(service pulseaudio-service-type)
+
+    ,(service nix-service-type
+              (nix-configuration
+               (build-sandbox-items '("/bin/sh"))))
+
+    ,(service cups-service-type
+              (cups-configuration
+               (web-interface? #t)))
 
     ,(service polkit-service-type)
     ,(elogind-service)

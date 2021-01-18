@@ -1,10 +1,12 @@
 (add-to-load-path (dirname (current-filename))) ; for my-tlp.scm
 
 (use-modules (my-tlp))
+(use-modules (util))
 (use-modules (config-common))
 
 (use-modules (guix gexp))
 (use-modules (guix packages))
+(use-modules (guix records))
 (use-modules (guix git-download))
 (use-modules (guix build-system gnu))
 (use-modules ((guix licenses) #:prefix license:))
@@ -22,10 +24,11 @@
 (use-modules (gnu packages tls))
 
 (use-modules (gnu services shepherd))
+(use-modules (gnu services base))
 (use-modules (gnu services linux))
 (use-modules (gnu services networking))
 (use-modules (gnu services dbus))
-(use-modules (gnu services desktop))
+(use-modules ((gnu services desktop) #:prefix guix:))
 (use-modules (gnu services mcron))
 
 (use-modules (gnu system mapped-devices))
@@ -148,9 +151,107 @@ maximum extent possible.")
                   (description
                    "Run @url{https://01.org/ofono,ofono}"))))
 
+
+
+(define (bool value)
+  (if value "true\n" "false\n"))
+
+(define-record-type* <bluetooth-configuration>
+  bluetooth-configuration make-bluetooth-configuration
+  bluetooth-configuration?
+  (bluez bluetooth-configuration-bluez (default bluez))
+  (auto-enable? bluetooth-configuration-auto-enable? (default #f)))
+
+(define (bluetooth-configuration-file config)
+  "Return a configuration file for the systemd bluetooth service, as a string."
+  (string-append
+   "[General]\n"
+   "Enable=Source\n"
+   "\n"
+   "[Policy]\n"
+   "AutoEnable=" (bool (bluetooth-configuration-auto-enable?
+                        config))))
+
+(define (bluetooth-directory config)
+  (computed-file "etc-bluetooth"
+                 #~(begin
+                     (mkdir #$output)
+                     (chdir #$output)
+                     (call-with-output-file "main.conf"
+                       (lambda (port)
+                         (display #$(bluetooth-configuration-file config)
+                                  port))))))
+
+(define (bluetooth-shepherd-service config)
+  "Return a shepherd service for @command{bluetoothd}."
+  (shepherd-service
+   (provision '(bluetooth))
+   (requirement '(dbus-system udev))
+   (documentation "Run the bluetoothd daemon.")
+   (start #~(make-forkexec-constructor
+             (list #$(file-append (bluetooth-configuration-bluez config)
+                                  "/libexec/bluetooth/bluetoothd"))))
+   (stop #~(make-kill-destructor))))
+
+
+(define %hrdj-device-config
+  `("modprobe.d/hrdj.conf"
+    ,(plain-file "hrdj.conf"
+                 "blacklist snd-usb-audio")))
+
+;; (define (zram-device-udev-rule config)
+;;   (file->udev-rule "99-zram.rules"
+;;                    (plain-file "99-zram.rules"
+;;                                (zram-device-configuration->udev-string config))))
+
+(define hrdj-device-service-type
+  (service-type
+    (name 'hrdj)
+    (default-value '())
+    (extensions
+      (list (service-extension etc-service-type
+                               (const (list %hrdj-device-config)))))))
+
+(define bluetooth-service-type
+  (service-type
+   (name 'bluetooth)
+   (extensions
+    (list (service-extension dbus-root-service-type
+                             (compose list bluetooth-configuration-bluez))
+          (service-extension udev-service-type
+                             (compose list bluetooth-configuration-bluez))
+          (service-extension etc-service-type
+                             (lambda (config)
+                               `(("bluetooth"
+                                  ,(bluetooth-directory config)))))
+          (service-extension shepherd-root-service-type
+                             (compose list bluetooth-shepherd-service))))
+   (default-value (bluetooth-configuration))
+   (description "Run the @command{bluetoothd} daemon, which manages all the
+Bluetooth devices and provides a number of D-Bus interfaces.")))
+
+(define* (bluetooth-service #:key (bluez bluez) (auto-enable? #f))
+  "Return a service that runs the @command{bluetoothd} daemon, which manages
+all the Bluetooth devices and provides a number of D-Bus interfaces.  When
+AUTO-ENABLE? is true, the bluetooth controller is powered automatically at
+boot.
+
+Users need to be in the @code{lp} group to access the D-Bus service.
+"
+  (service bluetooth-service-type
+           (bluetooth-configuration
+            (bluez bluez)
+            (auto-enable? auto-enable?))))
+
+
+(define %hosts-file
+  (plain-file "hosts"
+              (read-file-as-string "etc-hosts")))
+
 (operating-system
   (inherit common-system-config)
   (host-name "transistor")
+  (hosts-file %hosts-file)
 
   ;; almost always swap, zram is nice
   (kernel-arguments '("--rootflags=compress=zstd,discard,subvolid=54188,subvol=@guix_root,acl" "mitigations=off" "vm.swappiness=200"))
@@ -164,6 +265,11 @@ maximum extent possible.")
   (file-systems
    (append
     (list
+     (file-system
+       (mount-point "/tmp")
+       (device "none")
+       (title 'device)
+       (type "tmpfs"))
      (file-system
        (device (file-system-label "main_ssd"))
        (mount-point "/")
@@ -189,6 +295,8 @@ maximum extent possible.")
     (list
      (bluetooth-service)
 
+     (service hrdj-device-service-type)
+
      (service tlp-service-type
               (tlp-configuration
                (start-charge-thresh-bat0 75)
@@ -207,6 +315,10 @@ maximum extent possible.")
                (size "16G")
                (compression-algorithm 'lz4)))
 
-     (service network-manager-service-type)
+     (service network-manager-service-type
+              (network-manager-configuration
+               (dns "dnsmasq")
+               (vpn-plugins (list network-manager-openvpn network-manager-openconnect network-manager-vpnc))))
      (service wpa-supplicant-service-type)
-     (service ofono-service-type)))))
+    ; (service ofono-service-type)
+     ))))
