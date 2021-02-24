@@ -4,7 +4,7 @@
 (use-home-modules utils)
 
 (use-modules (gnu))
-(use-package-modules xdisorg admin glib pulseaudio wm ncurses tmux dunst messaging irc terminals compression xorg rust-apps linux)
+(use-package-modules xdisorg admin glib pulseaudio wm ncurses tmux dunst messaging irc terminals compression xorg rust-apps linux telegram)
 
 (use-modules (gnu system keyboard))
 (use-modules (gnu services xorg))
@@ -18,7 +18,6 @@
 (use-modules (vup xkeylogger))
 (use-modules (vup ip_addr))
 (use-modules (vup i3-gaps))
-(use-modules (vup telegram))
 (use-modules (vup emacs))
 
 (use-modules (srfi srfi-1)) ; fold-right ((
@@ -110,6 +109,7 @@
   (plain-file "alacritty.yml" (string-append "env:
   TERM: xterm-256color
   WINIT_HIDPI_FACTOR: \"1.0\"
+  WINIT_X11_SCALE_FACTOR: \"1.0\"
 
 window:
   dimensions:
@@ -138,7 +138,8 @@ font:
   italic:
     family: " monospace-font "
     style: Italic
-  size: 11.5
+#  size: 11.5
+  size: 10.0
   offset:
     x: 0
     y: 0
@@ -179,7 +180,7 @@ colors:
     cyan:    " (theme bright cyan) "
     white:   " (theme bright white) "
   indexed_colors: []
-visual_bell:
+bell:
   animation: EaseOutExpo
   duration: 0
   color: '0xffffff'
@@ -525,7 +526,6 @@ export RUST_SRC_PATH=" #$(file-append rust-nightly-src "/src")"
 export PATH=\"$PATH:/data/projects/dias/dart-sdk/flutter/bin\"
 export LM_LICENSE_FILE=/data/projects/fpga/diamond/license.dat
 
-export LD_LIBRARY_PATH='" #$(file-append pipewire-0.3 "/${LIB}/pipewire-0.3/jack") "'\"${LD_LIBRARY_PATH+\":$LD_LIBRARY_PATH\"}\"
 
 alias pw-jack=" #$(file-append pipewire-0.3 "/bin/pw-jack") "
 alias ls='" #$(file-append exa "/bin/exa") " --color=auto'
@@ -539,6 +539,7 @@ alias vi=$EDITOR
 
 [ -z \"$TMUX\" ] && (grep -e '/dev/tty[1-9]' <(tty) > /dev/null || " #$(file-append tmux "/bin/tmux") " new-session -t robin)")))))))
 
+; export LD_LIBRARY_PATH='" #$(file-append pipewire-0.3 "/${LIB}/pipewire-0.3/jack") "'\"${LD_LIBRARY_PATH+\":$LD_LIBRARY_PATH\"}\"
 (define shepherd-config
   (scheme-file "init.scm"
     #~(begin
@@ -1317,6 +1318,7 @@ pcm.!default {
     (symlink-file-home "/data/.ghidra" ".ghidra")      ; fuck it
     (symlink-file-home "/data/.FreeCAD/" ".FreeCAD")      ; fuck it
     (symlink-file-home "/data/.factorio" ".factorio")      ; fuck it
+    (symlink-file-home "/data/.hashcat" ".hashcat")      ; fuck it
     (symlink-file-home "/data/.m2" ".m2")      ; fuck it
     (symlink-file-home "/data/.aws" ".aws")      ; fuck it
     (symlink-file-home "/data/.elm" ".elm")      ; fuck it
