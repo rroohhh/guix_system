@@ -1,6 +1,8 @@
 (use-modules (vup patches))
 
-(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation)
+(use-package-modules video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation vim python-build telegram)
+
+(use-modules ((gnu packages python-xyz) #:prefix guix:))
 
 (use-modules (vup rust-nightly))
 (use-modules (vup fastlane))
@@ -82,7 +84,6 @@
   rawtherapee
   sfml
   socat
-  unrar
   valgrind
   wget
   gnu-make
@@ -160,6 +161,17 @@
   jq
   network-manager-applet
   lsof
+  python-binwalk
+  masscan
+  docker-compose
+  xxd
+
+  ; audio
+  pipewire
+  carla
+  rnnoise
+  rev-plugins
+  noisetorch
 
   ; wacom
   xf86-input-wacom
@@ -178,7 +190,7 @@
 
   ; lang
   go
-  swi-prolog
+  ;; swi-prolog ; broken
 
   ; java
   (list icedtea "jdk")
@@ -202,6 +214,7 @@
   python-nmigen-soc
   yosys-git
   nextpnr
+  trellis
   icestorm
   symbiyosys
 
@@ -240,7 +253,9 @@
   python-networkx
   python-shapely-fixed
   ;; python-descartes
-  jupyter
+  guix:jupyter
+  ;; vup:python-nbconvert-new
+  python-huffman
   python-dill
   python-multiprocess
   python-loky
@@ -253,6 +268,7 @@
   python-mypy
   python-pytest
   python-bitstring
+  python-bitarray
   python-imageio
   python-numba
 
@@ -269,11 +285,12 @@
   lz4
   unzip
   bzip2
-
+  unrar
 
   ; IM
   qtox
   quassel
+  telegram-desktop
 
   ; desktop shit
   adwaita-icon-theme
@@ -341,6 +358,8 @@
   libtool
   libsodium
   libimobiledevice
+  libxmu
+  libxt
   libxpm
   libxml2
   libxkbfile
