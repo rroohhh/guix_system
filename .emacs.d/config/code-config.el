@@ -9,10 +9,10 @@
   (yas-global-mode)
   (setq yas-triggers-in-field t))
 
-; (use-package flycheck
-;   :diminish flycheck-mode
-;   :config
-;   (global-flycheck-mode))
+                                        ; (use-package flycheck
+                                        ;   :diminish flycheck-mode
+                                        ;   :config
+                                        ;   (global-flycheck-mode))
 
 ;; (use-package smartparens
 ;;   :diminish smartparens-mode
@@ -148,6 +148,32 @@ Use because `string-width' counts invisible characters."
 
 (use-package realgud
   :ensure t)
+
+(use-package typescript-mode
+  :ensure t)
+
+(use-package tide
+  :ensure t
+  :config
+  (defun setup-tide-mode ()
+    (interactive)
+    (tide-setup)
+    (flycheck-mode +1)
+    (setq flycheck-check-syntax-automatically '(save mode-enabled))
+    (eldoc-mode +1)
+    (tide-hl-identifier-mode +1)
+    ;; company is an optional dependency. You have to
+    ;; install it separately via package-install
+    ;; `M-x package-install [ret] company`
+    (company-mode +1))
+
+  ;; aligns annotation to the right hand side
+  (setq company-tooltip-align-annotations t)
+
+  ;; formats the buffer before saving
+  (add-hook 'before-save-hook 'tide-format-before-save)
+
+  (add-hook 'typescript-mode-hook #'setup-tide-mode))
 
 (provide 'code-config)
 ;;; code-config.el ends here

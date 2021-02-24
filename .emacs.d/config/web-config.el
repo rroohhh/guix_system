@@ -5,7 +5,7 @@
 
 (use-package web-beautify
   :config
-  (evil-define-key 'normal js-mode-map (kbd "öö") 'web-beautify-js)
+;  (evil-define-key 'normal js-mode-map (kbd "öö") 'web-beautify-js)
   (evil-define-key 'normal css-mode-map (kbd "öö") 'web-beautify-css)
   (evil-define-key 'normal html-mode-map (kbd "öö") 'web-beautify-html))
 
