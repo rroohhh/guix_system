@@ -312,7 +312,7 @@ Users need to be in the @code{lp} group to access the D-Bus service.
 
      (service zram-device-service-type
               (zram-device-configuration
-               (size "16G")
+               (size "32G")
                (compression-algorithm 'lz4)))
 
      (service network-manager-service-type
