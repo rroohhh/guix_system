@@ -101,6 +101,7 @@
 
 ;; highlight whole expression; makes it easier to find the matching braket and debug missing brakets
 (setq show-paren-style 'expression)
+(set-face-background 'show-paren-match "#234f46")
 (set-face-foreground 'show-paren-match nil)
 (set-face-attribute 'show-paren-match nil
                     :weight 'normal :underline nil :overline nil :slant 'normal)

@@ -53,7 +53,6 @@
 (modify-face 'diff-changed "#ebdbb2" "#427b58")
 (modify-face 'diff-removed "#ebdbb2" "#9d0006")
 
-;; more colors :)
 (modify-face 'rainbow-delimiters-depth-1-face "#fb4933")
 (modify-face 'rainbow-delimiters-depth-2-face "#b8bb26")
 (modify-face 'rainbow-delimiters-depth-3-face "#fe8019")

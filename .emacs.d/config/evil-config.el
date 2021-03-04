@@ -12,6 +12,8 @@
   (setq evil-want-C-u-scroll t)
   (setq evil-cross-lines t)
   (setq evil-want-fine-undo t)
+  :custom
+  (evil-undo-system 'undo-redo)
   :config
   (evil-mode 1)
 
