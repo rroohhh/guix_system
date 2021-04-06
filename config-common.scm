@@ -13,7 +13,7 @@
 (use-package-modules bootloaders certs wm suckless xorg linux ssh emacs vim version-control mail connman polkit vpn samba admin glib autotools readline documentation pkg-config python tls android rust-apps cpio)
 
 (use-modules (gnu services))
-(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking ssh linux nix cups)
+(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking ssh linux nix cups sysctl)
 
 (use-modules (vup linux))
 (use-modules (vup python-xyz))
@@ -195,7 +195,6 @@
     ,(service root-remount-service-type)
     ,(service docker-service-type)
     ,(service cups-pk-helper-service-type)
-                                        ;    ,(service pulseaudio-service-type)
 
     ,(service nix-service-type
               (nix-configuration
@@ -226,6 +225,10 @@
                 `(("robin" ,(local-file "robin.pub"))))
 	           (extra-content "PermitUserEnvironment yes")))
     ,@(modify-services %base-services
+        (sysctl-service-type config =>
+                       (sysctl-configuration
+                         (settings (append '(("kernel.dmesg_restrict" . "0"))
+                                           %default-sysctl-settings))))
         (udev-service-type config =>
                            (udev-configuration
                             (inherit config)

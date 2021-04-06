@@ -4,7 +4,7 @@
 ;;; Restricted to particular modes, but I really advise NOT RUNNING
 ;;; THIS AT ALL if you do much of anything sensitive inside Emacs.
 
-(defvar keylogger-path "/home/robin/.emacs.d/keys"
+(defvar keylogger-path "/home/robin/.doom.d/keys"
   "Where to store the log.")
 
 (defcustom keylogger-autosave-frequency (* 60 15)

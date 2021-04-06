@@ -25,6 +25,7 @@
 
 (use-modules (gnu services shepherd))
 (use-modules (gnu services base))
+(use-modules (gnu services admin))
 (use-modules (gnu services linux))
 (use-modules (gnu services networking))
 (use-modules (gnu services dbus))
@@ -303,6 +304,10 @@ Users need to be in the @code{lp} group to access the D-Bus service.
                (start-charge-thresh-bat1 75)
                (stop-charge-thresh-bat0 80)
                (stop-charge-thresh-bat1 80)))
+
+     (simple-service 'rotate-mcron-log
+                              rottlog-service-type
+                              (list (log-rotation (files '("/var/log/mcron.log")))))
 
      (service mcron-service-type
               (mcron-configuration

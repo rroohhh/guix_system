@@ -126,7 +126,7 @@ scrolling:
   multiplier: 3
   auto_scroll: false
 
-tabspaces: 8
+tabspaces: 4
 
 font:
   normal:
@@ -211,6 +211,7 @@ live_config_reload: true
 
 alt_send_esc: true
 key_bindings:
+  - { key: Space,    mods: Shift|Control,           chars: \"\\x00\"       }
   - { key: Return,   mods: Control, chars: \"\x1b[27;5;13~\"               }
   - { key: Paste,                   action: Paste                          }
   - { key: Copy,                    action: Copy                           }
@@ -522,7 +523,6 @@ export XAUTHORITY=" #$xauthority-file "
 export EDITOR='TERM=xterm-24bits " #$(file-append emacs "/bin/emacsclient") " -c -t'
 export VISUAL=$EDITOR
 
-export RUST_SRC_PATH=" #$(file-append rust-nightly-src "/src")"
 export PATH=\"$PATH:/data/projects/dias/dart-sdk/flutter/bin\"
 export LM_LICENSE_FILE=/data/projects/fpga/diamond/license.dat
 
@@ -1134,6 +1134,8 @@ set-window-option -g mode-key vi
 set-option -g history-limit 100000
 set -sg escape-time 0
 
+unbind C-Space
+
 unbind C-b
 set-option -g prefix C-a
 bind-key C-a send-prefix
@@ -1287,6 +1289,7 @@ pcm.!default {
     (symlink-file-home "/data/robin/.config/kicad" ".config/kicad") ; TODO(robin) what
     (symlink-file-home "/data/robin/.purple" ".purple") ; SECRETS, TODO(robin): figure out what to do about    this one
     (symlink-file-home "/data/projects/guix_system/.emacs.d" ".emacs.d") ; TODO(robin): figure out this one
+    (symlink-file-home "/data/projects/guix_system/.doom.d" ".doom.d") ; TODO(robin): figure out this one
     (symlink-file-home "/data/projects/guix_system/.clang-format" ".clang-format") ; TODO(robin): figure out this one
     (symlink-file-home "/data/robin/.texlive2018" ".texlive2018")
     (symlink-file-home "/data/robin/.texlive2019" ".texlive2019")
@@ -1303,6 +1306,7 @@ pcm.!default {
     (symlink-file-home "/data/.config/pipewire-media-session" ".config/pipewire-media-session")  ; fuck it
     (symlink-file-home "/data/.fastlane" ".fastlane")  ; fuck it
     (symlink-file-home "/data/.gradle" ".gradle")  ; fuck it
+    (symlink-file-home "/data/.config/Google" ".config/Google")  ; fuck it
     (symlink-file-home "/data/.frida" ".frida")  ; fuck it
     (symlink-file-home "/data/.npmrc" ".npmrc")  ; fuck it
     (symlink-file-home "/data/.yarnrc" ".yarnrc")  ; fuck it
