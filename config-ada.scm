@@ -60,6 +60,13 @@
   (plain-file "hosts"
               (read-file-as-string "etc-hosts")))
 
+
+(define zfs-with-my-kernel
+  (package
+    (inherit zfs)
+    (arguments (cons* #:linux linux-nonfree/extra_config
+                      (package-arguments zfs)))))
+
 (operating-system
   (inherit common-system-config)
   (host-name "ada")
@@ -67,7 +74,7 @@
 
   ;; almost always swap, zram is nice
   (kernel-arguments '("--rootflags=compress=zstd,discard,subvolid=54188,subvol=@guix_root,acl" "mitigations=off" "vm.swappiness=200"))
-  (kernel-loadable-modules (append `(,zfs) (operating-system-kernel-loadable-modules common-system-config)))
+  (kernel-loadable-modules (append (list (list zfs-with-my-kernel "module")) (operating-system-kernel-loadable-modules common-system-config)))
 
   (file-systems
    (append
@@ -81,7 +88,7 @@
        (device (uuid "67792584-3957-400f-a732-71afcdb23eb1"))
        (mount-point "/")
        (type "ext4")
-       (options "noatime,acl"))
+       (options "acl"))
      (file-system
        (device (uuid "0773-D529" 'fat))
        (mount-point "/boot")
@@ -94,7 +101,7 @@
     (list
      (service zfs-service-type
       (zfs-configuration
-       (kernel (operating-system-kernel common-system-config))
+       (kernel linux-nonfree/extra_config)
        (auto-scrub #f)
        (auto-snapshot? #f)))
      

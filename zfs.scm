@@ -126,7 +126,7 @@ FILE-SYSTEM."
   zfs-configuration
   make-zfs-configuration
   zfs-configuration?
-  ;; ; linux-libre kernel you want to compile the base-zfs module for.
+  ;; linux-libre kernel you want to compile the base-zfs module for.
   (kernel                     zfs-configuration-kernel)
   ;; the OpenZFS package that will be modified to compile for the
   ;; given kernel.
