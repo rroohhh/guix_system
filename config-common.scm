@@ -221,10 +221,16 @@
     ,(service openssh-service-type
               (openssh-configuration
                (x11-forwarding? #t)
+               (permit-root-login 'without-password)
                (authorized-keys
-                `(("robin" ,(local-file "robin.pub"))))
+                `(("root" ,(local-file "robin.pub"))
+		  ("robin" ,(local-file "robin.pub"))))
 	           (extra-content "PermitUserEnvironment yes")))
     ,@(modify-services %base-services
+        (guix-service-type config =>
+			    (guix-configuration
+			      (inherit config)
+			      (discover? #t)))
         (sysctl-service-type config =>
                        (sysctl-configuration
                          (settings (append '(("kernel.dmesg_restrict" . "0"))
