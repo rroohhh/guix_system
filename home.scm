@@ -3,6 +3,7 @@
 
 (use-modules (vup xkeylogger))
 (use-modules (vup hwinfo))
+(use-modules (vup emacs))
 (use-modules (vup ip_addr))
 (use-modules (vup home i3))
 
@@ -15,7 +16,6 @@
 
 (use-modules (gnu packages admin))
 (use-modules (gnu packages dunst))
-(use-modules (gnu packages emacs))
 (use-modules (gnu packages glib))
 (use-modules (gnu packages irc))
 (use-modules (gnu packages linux))
@@ -70,6 +70,8 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define emacs emacs-pgtk-native-comp-no-xwidgets)
+
 (define monospace-font "Hack")
 
 (define-syntax vup
@@ -344,6 +346,26 @@ key_bindings:
   - { key: F12,      mods: Super,   chars: \"\x1b[24;3~\"                  }
   - { key: NumpadEnter,             chars: \"\n\"                          }")))
 
+(define ideavim-config
+  (plain-file "tmux.conf" (string-append "
+nnoremap " (keys* left) " h
+nnoremap " (keys* down) " j
+nnoremap " (keys* up) " k
+nnoremap m n
+nnoremap M N
+nnoremap h <Nop>
+nnoremap j <Nop>
+nnoremap k <Nop>
+
+vnoremap " (keys* left) " h
+vnoremap " (keys* down) " j
+vnoremap " (keys* up) " k
+vnoremap m n
+vnoremap M N
+vnoremap h <Nop>
+vnoremap j <Nop>
+vnoremap k <Nop>")))
+
 
 (define tmux-config
   (plain-file "tmux.conf" (string-append "setw -g aggressive-resize on
@@ -443,6 +465,7 @@ defaultBranch = main"))
              "for_window [ title=\"^org.anbox.*\" ] border none floating enable"
              "default_border pixel 3"
 	     "input * {
+  natural_scroll enabled
   xkb_layout de
   xkb_variant vup
 }"))
@@ -511,8 +534,8 @@ defaultBranch = main"))
              ((,mod "Shift" "c") "reload")
              ((,mod "Shift" "r") "restart")
              ((,mod "Shift" "e") "exit")
-             (("XF86MonBrightnessUp") "exec sh -c 'hwinfo backlight brightness $(($(hwinfo backlight brightness) + 50))'")
-             (("XF86MonBrightnessDown") "exec sh -c 'hwinfo backlight brightness $(($(hwinfo backlight brightness) - 50))'")
+             (("XF86MonBrightnessUp") "exec sh -c 'hwinfo backlight brightness $(($(hwinfo backlight brightness) + 20))'")
+             (("XF86MonBrightnessDown") "exec sh -c 'hwinfo backlight brightness $(($(hwinfo backlight brightness) - 20))'")
              (("XF86AudioRaiseVolume") ("exec " ,(file-append pulseaudio "/bin/pactl") " set-sink-volume 0 +5%"))
              (("XF86AudioLowerVolume") ("exec " ,(file-append pulseaudio "/bin/pactl") " set-sink-volume 0 -5%"))
              (("XF86AudioMute") ("exec " ,(file-append pulseaudio "/bin/pactl") " set-sink-mute 0 toggle"))
@@ -626,8 +649,10 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
        (setenv "SSH_AUTH_SOCK" %ssh-socket))
      (when home
        (setenv "HOME" home))
-     (setenv "DISPLAY"
-               (if (string? display) display (display))))
+     (setenv "DISPLAY" display)
+     (setenv "XDG_CURRENT_DESKTOP" "sway")
+     (setenv "WAYLAND_DISPLAY" (string-append
+                                "wayland-" (substring display 1))))
    environ))
 
 (define (run-command command)
@@ -760,19 +785,33 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
     #:provides '(xkeylogger)
     #:command `(,#$(file-append xkeylogger "/bin/xkeylogger") "/data/projects/keyboard/xkeylogger.log")))
 
-(define (sway-service display)
-  (make-simple-forkexec-display-service display
-    #:docstring "sway"
-    #:provides '(sway wm)
-    #:command `(,#$(file-append sway "/bin/sway"))))
+;; (define (sway-service display)
+;;   (make-simple-forkexec-display-service display
+;;     #:docstring "sway"
+;;     #:provides '(sway wm)
+;;     #:command `(,#$(file-append sway "/bin/sway"))))
+
+(define* (pulseaudio-service display)
+  (make-display-service 
+    #:display display
+    #:docstring "pulseaudio"
+    #:provides '(pulseaudio)
+    #:start (lambda _
+          (with-environment-excursion (environ* display (format #f "/tmp/pa-~a" (getuid)))
+                      (run-command (list #$(file-append pulseaudio "/bin/pulseaudio") "--start"))))
+    #:stop (make-kill-destructor)))
+
 
 (define sway
   (make-service
     #:docstring "sway"
+    #:requires '(dbus:0)
     #:provides '(sway wm)
-    #:start
-    (make-forkexec-constructor
-     `(,#$(file-append sway "/bin/sway")))
+    #:start (make-forkexec-constructor (list #$(file-append sway "/bin/sway"))
+				                       #:environment-variables (cons*
+                                                                (string-append "DBUS_SESSION_BUS_ADDRESS=" (%dbus-address ":0"))
+                                                                "XDG_CURRENT_DESKTOP=sway"
+                                                                (default-environment-variables)))
     #:stop
     (make-kill-destructor)))
 
@@ -858,18 +897,18 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
      (make-display-services ":0")))
 
 (action 'shepherd 'daemonize)
-(start 'sway)
 (start 'dbus:0)
-;; (start 'pipewire:0)
+(start 'sway)
+(start 'pipewire:0)
 ;; (start 'pipewire-media-session:0)
-;; (start 'pipewire-pulse:0)
+(start 'pipewire-pulse:0)
 ;; (start 'dunst:0)
-;; (start 'pavucontrol:0)
+(start 'pavucontrol:0)
 ;; (start 'tmux:0)
 (start 'emacsd)
 ;; (start 'emacsclient:0)
-;; (start 'quasselclient:0)
-;; (start 'telegram:0)
+(start 'quasselclient:0)
+ (start 'telegram:0)
 ;; (start 'xkeylogger:0)
 ;; (start 'redshift:0)
 ;; (start 'natural-scrolling:0)
@@ -900,17 +939,14 @@ set keymap vi-command
   (computed-file "battery.sh"
     #~(let ((script #$(apply mixed-text-file "script" 
               (list "#!/usr/bin/env sh
-CHARGE=$(printf '%.0f\\n' $(" (file-append hwinfo "/bin/hwinfo") " battery capacity))
+CHARGE=$(printf '%.0f\\n' $(" (file-append hwinfo/amd "/bin/hwinfo") " battery capacity))
 
 LEVEL=$(((CHARGE-1)/20))
 ICON=\"f$(( 244 - LEVEL ))\"
 echo -en \" \\u${ICON} ${CHARGE}%\"
 
-if [ 'Charging' = $(" (file-append hwinfo "/bin/hwinfo") " battery 0 status) ] 
+if [ 'Charging' = $(" (file-append hwinfo/amd "/bin/hwinfo") " battery 0 status) ] 
 then 
-    echo -e ' (Charging)'
-elif [ 'Charging' = $(" (file-append hwinfo "/bin/hwinfo") " battery 1 status) ] 
-then
     echo -e ' (Charging)'
 fi
 
@@ -926,16 +962,23 @@ exit 0"))))
     '(#:local-build? #t
       #:modules ((guix build utils)))))
 
+(define mako-config
+  (plain-file  "config"
+               "height=900
+width=1920
+margin=0
+padding=0"))
+
 (define i3blocks-config
   (computed-file 
-    "config" 
-    #~(with-output-to-file 
-        #$output 
-        (lambda _ 
-          (set-port-encoding! (current-output-port) "UTF-8")    ;; shitty hack for unicode to work
-          (format #t "~a" 
-            (string-append 
-          #$@(list "separator=false
+   "config"
+   #~(with-output-to-file
+         #$output
+       (lambda _
+         (set-port-encoding! (current-output-port) "UTF-8") ;; shitty hack for unicode to work
+         (format #t "~a"
+                 (string-append
+                  #$@(list "separator=false
 separator_block_width=5
 [wireless]
 label=  
@@ -1036,7 +1079,7 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
 
 export HISTCONTROL=ignoredups:erasedups
 shopt -s histappend
-export PROMPT_COMMAND=\"${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; history -r\"
+export PROMPT_COMMAND=\"history -a;history -n;__prompt\"
 HISTSIZE=
 HISTFILESIZE=
 
@@ -1086,11 +1129,13 @@ fi\n"
 		   go-github-com-junegunn-fzf
 		   perl))
       (simple-file-home rofi-config ".config/rofi/config.rasi")
+      (simple-file-home mako-config ".config/mako/config")
       (simple-file-home i3blocks-config ".config/i3blocks/config")
       (simple-file-home gtk3-settings ".config/gtk-3.0/settings.ini")
       (simple-file-home inputrc ".inputrc")
       (simple-file-home notifymuch-config ".config/notifymuch/notifymuch.cfg")
       (simple-file-home tmux-config ".tmux.conf")
+      (simple-file-home ideavim-config ".ideavimrc")
       (simple-file-home alacritty-config ".config/alacritty/alacritty.yml")
       (simple-file-home (i3-home sway-config) ".config/sway")
       (simple-file-home gitconfig ".gitconfig")
@@ -1109,7 +1154,7 @@ fi\n"
       (symlink-file-home "/data/.config/horizon" ".config/horizon") ; TODO(robin): maybe generate the color scheme from here?
       (symlink-file-home "/data/robin/.config/kicad" ".config/kicad") ; TODO(robin) what
       (symlink-file-home "/data/robin/.purple" ".purple") ; SECRETS, TODO(robin): figure out what to do about    this one
-      (symlink-file-home "/data/projects/guix_system/.emacs.d" ".emacs.d") ; TODO(robin): figure out this one
+      (symlink-file-home "/data/projects/doom-emacs" ".emacs.d") ; TODO(robin): figure out this one
       (symlink-file-home "/data/projects/guix_system/.doom.d" ".doom.d") ; TODO(robin): figure out this one
       (symlink-file-home "/data/projects/guix_system/.clang-format" ".clang-format") ; TODO(robin): figure out this one
       (symlink-file-home "/data/robin/.texlive2018" ".texlive2018")
@@ -1120,6 +1165,7 @@ fi\n"
       (symlink-file-home "/data/.config/skypeforlinux" ".config/skypeforlinux")  ; fuck it
       (symlink-file-home "/data/.config/unity3d" ".config/unity3d")  ; fuck it
       (symlink-file-home "/data/.config/dconf" ".config/dconf")  ; fuck it
+      (symlink-file-home "/data/.config/Signal" ".config/Signal")  ; fuck it
       (symlink-file-home "/data/.config/astroid" ".config/astroid")  ; fuck it
       (symlink-file-home "/data/.config/pmbootstrap.cfg" ".config/pmbootstrap.cfg")  ; fuck it
       (symlink-file-home "/data/.config/VSCodium" ".config/VSCodium")  ; fuck it
@@ -1157,10 +1203,12 @@ fi\n"
       (symlink-file-home "/nix/var/nix/profiles/per-user/robin/profile" ".nix-profile")      ; fuck it
       (symlink-file-home "/data/.flutter_tool_state" ".flutter_tool_state")      ; fuck it
       (symlink-file-home "/data/.flutter" ".flutter")      ; fuck it
+      (symlink-file-home "/data/.config/flutter" ".config/flutter")      ; fuck it
       (symlink-file-home "/data/.flutter_settings" ".flutter_settings")      ; fuck it
       (symlink-file-home "/data/.pub-cache" ".pub-cache")      ; fuck it
       (symlink-file-home "/data/.vpython-root" ".vpython-root")      ; fuck it
       (symlink-file-home "/data/.dartServer" ".dartServer")      ; fuck it
+      (symlink-file-home "/data/.gnupg" ".gnupg")      ; fuck it
       (symlink-file-home "/data/.vpython_cipd_cache" ".vpython_cipd_cache")      ; fuck it
       (symlink-file-home "/data/texmf" "texmf") ; TODO(robin): rework this to static files in the store? (or build packages for the few missing things)
       (symlink-file-home "/data/robin/.config/chromium" ".config/chromium"))))
