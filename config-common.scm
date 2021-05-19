@@ -227,6 +227,10 @@
 		  ("robin" ,(local-file "robin.pub"))))
 	           (extra-content "PermitUserEnvironment yes")))
     ,@(modify-services %base-services
+        (guix-publish-service-type config =>
+                                   (guix-publish-configuration
+                                    (inherit config)
+                                    (advertise? #t)))
         (guix-service-type config =>
 			    (guix-configuration
 			      (inherit config)

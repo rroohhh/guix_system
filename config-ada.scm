@@ -42,6 +42,7 @@
 (use-modules (gnu system file-systems))
 
 (use-modules (vup misc))
+(use-modules (vup hwinfo))
 
 (define %hrdj-device-config
   `("modprobe.d/hrdj.conf"
@@ -73,8 +74,11 @@
   (hosts-file %hosts-file)
 
   ;; almost always swap, zram is nice
-  (kernel-arguments '("--rootflags=compress=zstd,discard,subvolid=54188,subvol=@guix_root,acl" "mitigations=off" "vm.swappiness=200"))
-  (kernel-loadable-modules (append (list (list zfs-with-my-kernel "module")) (operating-system-kernel-loadable-modules common-system-config)))
+  (kernel-arguments '("modprobe.blacklist=pcspkr" "mitigations=off" "vm.swappiness=200"))
+  (kernel-loadable-modules (append (list v4l2loopback-linux-module (list zfs-with-my-kernel "module")) (operating-system-kernel-loadable-modules common-system-config)))
+
+  (setuid-programs (append (list
+	(file-append hwinfo/amd "/bin/hwinfo")) %setuid-programs))
 
   (file-systems
    (append
@@ -91,7 +95,7 @@
        (options "acl"))
      (file-system
        (device (uuid "0773-D529" 'fat))
-       (mount-point "/boot")
+       (mount-point "/boot/efi")
        (type "vfat")))
     %base-file-systems))
 
@@ -104,7 +108,7 @@
        (kernel linux-nonfree/extra_config)
        (auto-scrub #f)
        (auto-snapshot? #f)))
-     
+
      (bluetooth-service)
 
      (service hrdj-device-service-type)

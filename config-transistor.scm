@@ -37,6 +37,7 @@
 (use-modules (gnu system file-systems))
 
 (use-modules (vup misc))
+(use-modules (vup hwinfo))
 
 (define-public iwd
   (package
@@ -262,6 +263,9 @@ Users need to be in the @code{lp} group to access the D-Bus service.
           (source (uuid "2888c8e3-3a67-46a9-bc83-022ed5e66c02"))
           (target "main_ssd")
           (type luks-device-mapping))))
+
+  (setuid-programs (append (list
+	(file-append hwinfo "/bin/hwinfo")) %setuid-programs))
 
   (file-systems
    (append
