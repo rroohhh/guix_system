@@ -53,7 +53,11 @@
        xterm-query-timeout nil
        indent-tabs-mode nil
        fill-column 120
-       tab-width 4)
+       tab-width 4
+       notmuch-fcc-dirs "sent")
+(after! notmuch
+  (setq! notmuch-fcc-dirs "sent"))
+
 
 (delete-selection-mode 1)
 
@@ -143,6 +147,14 @@
 
 (defadvice lsp-format-buffer (before disable-gc activate) (setq gc-cons-threshold most-negative-fixnum))
 (defadvice lsp-format-buffer (after enable-gc activate) (run-at-time 1 nil lambda () (setq gc-cons-threshold doom-gc-cons-threshold)))
+
+(set-face-attribute 'default nil
+                    :family "Hack"
+                    :height 105
+                    :weight 'normal
+                    :width 'normal)
+
+(set-fontset-font t nil (font-spec :size 20 :name "Noto Sans"))
 
 ;; (set-ligatures! '
 ;;     ;; Functional

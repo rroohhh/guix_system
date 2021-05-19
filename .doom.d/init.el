@@ -26,7 +26,7 @@
        (ivy +fuzzy +childframe +prescient +icons)               ; a search engine for love and life
 
        :ui
-       ;; ophints
+       ;;ophints            ;
        ;;deft              ; notational velocity for Emacs
        doom              ; what makes DOOM look the way it does
        ;; doom-dashboard    ; a nifty splash screen for Emacs
@@ -134,10 +134,10 @@
        ;;hy                ; readability of scheme w/ speed of python
        ;;idris             ; a language you can depend on
        (json +lsp)              ; At least it ain't XML
-       ;;(java +meghanada) ; the poster child for carpal tunnel syndrome
-       javascript        ; all(hope(abandon(ye(who(enter(here))))))
+       (java +meghanada) ; the poster child for carpal tunnel syndrome
+       (javascript +lsp)        ; all(hope(abandon(ye(who(enter(here))))))
        ;;julia             ; a better, faster MATLAB
-       ;;kotlin            ; a better, slicker Java(Script)
+       (kotlin +lsp)            ; a better, slicker Java(Script)
        (latex +lsp +latexmk)             ; writing papers in Emacs has never been so fun
        ;;lean
        ;;factor
@@ -164,7 +164,7 @@
        (sh +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
        ;;sml
        ;;solidity          ; do you need a blockchain? No.
-       ;;swift             ; who asked for emoji variables?
+       swift             ; who asked for emoji variables?
        ;;terra             ; Earth and Moon in alignment for performance.
        (web +lsp)               ; the tubes
        (yaml +lsp)              ; JSON, but readable
