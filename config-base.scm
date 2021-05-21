@@ -54,33 +54,6 @@
                  (close-port port))
 
                (invoke "make" "oldconfig")))))))))
-;; CONFIG_BLK_MQ_VIRTIO=y
- ;; CONFIG_VIRTIO_VSOCKETS=m
- ;; CONFIG_VIRTIO_VSOCKETS_COMMON=m
- ;; CONFIG_NET_9P_VIRTIO=m
- ;; CONFIG_VIRTIO_BLK=m
- ;; CONFIG_SCSI_VIRTIO=m
- ;; CONFIG_VIRTIO_NET=m
- ;; CONFIG_CAIF_VIRTIO=m
- ;; CONFIG_VIRTIO_CONSOLE=m
- ;; CONFIG_HW_RANDOM_VIRTIO=m
- ;; CONFIG_DRM_VIRTIO_GPU=m
- ;; CONFIG_VIRTIO=m
- ;; CONFIG_VIRTIO_MENU=y
- ;; CONFIG_VIRTIO_PCI=m
- ;; CONFIG_VIRTIO_PCI_LEGACY=y
- ;; CONFIG_VIRTIO_VDPA=m
- ;; CONFIG_VIRTIO_PMEM=m
- ;; CONFIG_VIRTIO_BALLOON=m
- ;; CONFIG_VIRTIO_MEM=m
- ;; CONFIG_VIRTIO_INPUT=m
- ;; CONFIG_VIRTIO_MMIO=m
- ;; CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
- ;; CONFIG_VIRTIO_DMA_SHARED_BUFFER=m
- ;; CONFIG_RPMSG_VIRTIO=m
- ;; CONFIG_VIRTIO_FS=m
- ;; CONFIG_CRYPTO_DEV_VIRTIO=m
-
 
 (define-public linux-nonfree/extra_config
   (let ((base
@@ -170,11 +143,11 @@
                (x11-forwarding? #t)
                (authorized-keys ssh-default-authorized-keys)
 	           (extra-content "PermitUserEnvironment yes")))
+    ,(service guix-publish-service-type
+              (guix-publish-configuration
+               (host "0.0.0.0")
+               (advertise? #t)))
     ,@(modify-services %base-services
-        (guix-publish-service-type config =>
-                                   (guix-publish-configuration
-                                    (inherit config)
-                                    (advertise? #t)))
         (guix-service-type config =>
 			    (guix-configuration
 			      (inherit config)
