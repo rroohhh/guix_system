@@ -70,7 +70,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define emacs emacs-pgtk-native-comp-no-xwidgets)
+(define emacs emacs-pgtk-native-comp)
 
 (define monospace-font "Hack")
 

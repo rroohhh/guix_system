@@ -124,7 +124,7 @@
    usbmuxd
    git
    ;; emacs
-   emacs-pgtk-native-comp-no-xwidgets
+   emacs-pgtk-native-comp
    ;; arcan
    inkscape
    poppler
