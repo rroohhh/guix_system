@@ -151,7 +151,11 @@
         (guix-service-type config =>
 			    (guix-configuration
 			      (inherit config)
-			      (discover? #t)))
+  			      (discover? #t)
+                  (authorized-keys
+                   (append (list (local-file "ada-signing-key.pub")
+                                 (local-file "mel-signing-key.pub"))
+                           %default-authorized-guix-keys))))
         (sysctl-service-type config =>
                        (sysctl-configuration
                          (settings (append '(("kernel.dmesg_restrict" . "0"))
