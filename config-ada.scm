@@ -2,7 +2,8 @@
 
 (use-modules (my-tlp))
 (use-modules (util))
-(use-modules (config-common))
+(use-modules (config-base))
+(use-modules (config-desktop-base))
 (use-modules (bluetooth))
 (use-modules (zfs))
 
@@ -69,13 +70,13 @@
                       (package-arguments zfs)))))
 
 (operating-system
-  (inherit common-system-config)
+  (inherit base-desktop-system-config)
   (host-name "ada")
   (hosts-file %hosts-file)
 
   ;; almost always swap, zram is nice
   (kernel-arguments '("modprobe.blacklist=pcspkr" "mitigations=off" "vm.swappiness=200"))
-  (kernel-loadable-modules (append (list v4l2loopback-linux-module (list zfs-with-my-kernel "module")) (operating-system-kernel-loadable-modules common-system-config)))
+  (kernel-loadable-modules (append (list v4l2loopback-linux-module (list zfs-with-my-kernel "module")) (operating-system-kernel-loadable-modules base-desktop-system-config)))
 
   (setuid-programs (append (list
 	(file-append hwinfo/amd "/bin/hwinfo")) %setuid-programs))
@@ -101,7 +102,7 @@
 
   (services
    (append
-    common-services
+    base-desktop-services
     (list
      (service zfs-service-type
       (zfs-configuration

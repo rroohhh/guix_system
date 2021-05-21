@@ -4,12 +4,12 @@
 (use-modules (gnu services virtualization))
 (use-modules (gnu system file-systems))
 
-(use-modules (config-common))
+(use-modules (config-desktop-base))
 (use-modules (util))
 (use-modules (wireguard))
 
 (operating-system
-  (inherit common-system-config)
+  (inherit base-desktop-system-config)
 
   (host-name "mel")
 
@@ -40,7 +40,7 @@
        (check? #f)))
     %base-file-systems))
 
-  (services (append common-services
+  (services (append base-desktop-services
                     (list
                      (service wireguard-service-type
                               (wireguard-configuration

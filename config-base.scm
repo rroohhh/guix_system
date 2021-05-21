@@ -1,32 +1,24 @@
-(define-module (config-common))
+(define-module (config-base))
 
 (add-to-load-path (dirname (current-filename))) ; for my-tlp.scm
-(use-modules (pulseaudio))
 
 (use-modules (vup patches)) ; really bad hacks, but who cares
 
 (use-modules (gnu) (gnu system nss))
 
 (use-modules (guix packages))
+(use-package-modules ssh vim certs cpio)
 (use-modules (guix utils))
 (use-modules (guix records))
-(use-package-modules bootloaders certs wm suckless xorg linux ssh emacs vim version-control mail connman polkit vpn samba admin glib autotools readline documentation pkg-config python tls android rust-apps cpio)
 
 (use-modules (gnu services))
-(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking ssh linux nix cups sysctl)
+(use-service-modules dbus desktop xorg avahi networking ssh sysctl)
 
 (use-modules (vup linux))
-(use-modules (vup python-xyz))
-(use-modules (vup caps2esc))
 (use-modules (vup hwinfo))
 
 (use-modules (srfi srfi-1))
 (use-modules (ice-9 match))
-(use-modules (guix download))
-(use-modules (guix git-download))
-(use-modules (guix build-system gnu))
-(use-modules (guix build-system trivial))
-(use-modules ((guix licenses) #:prefix license:))
 
 (define (config->string options)
   (string-join (map (match-lambda
@@ -62,12 +54,39 @@
                  (close-port port))
 
                (invoke "make" "oldconfig")))))))))
+;; CONFIG_BLK_MQ_VIRTIO=y
+ ;; CONFIG_VIRTIO_VSOCKETS=m
+ ;; CONFIG_VIRTIO_VSOCKETS_COMMON=m
+ ;; CONFIG_NET_9P_VIRTIO=m
+ ;; CONFIG_VIRTIO_BLK=m
+ ;; CONFIG_SCSI_VIRTIO=m
+ ;; CONFIG_VIRTIO_NET=m
+ ;; CONFIG_CAIF_VIRTIO=m
+ ;; CONFIG_VIRTIO_CONSOLE=m
+ ;; CONFIG_HW_RANDOM_VIRTIO=m
+ ;; CONFIG_DRM_VIRTIO_GPU=m
+ ;; CONFIG_VIRTIO=m
+ ;; CONFIG_VIRTIO_MENU=y
+ ;; CONFIG_VIRTIO_PCI=m
+ ;; CONFIG_VIRTIO_PCI_LEGACY=y
+ ;; CONFIG_VIRTIO_VDPA=m
+ ;; CONFIG_VIRTIO_PMEM=m
+ ;; CONFIG_VIRTIO_BALLOON=m
+ ;; CONFIG_VIRTIO_MEM=m
+ ;; CONFIG_VIRTIO_INPUT=m
+ ;; CONFIG_VIRTIO_MMIO=m
+ ;; CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
+ ;; CONFIG_VIRTIO_DMA_SHARED_BUFFER=m
+ ;; CONFIG_RPMSG_VIRTIO=m
+ ;; CONFIG_VIRTIO_FS=m
+ ;; CONFIG_CRYPTO_DEV_VIRTIO=m
+
 
 (define-public linux-nonfree/extra_config
   (let ((base
          (make-linux* linux-nonfree
                #:extra-version "vup"
-               #:extra-options `(;; Needed for probes
+               #:extra-options `( ;; Needed for probes
                                  ("CONFIG_UPROBE_EVENTS" . #t)
                                  ("CONFIG_KPROBE_EVENTS" . #t)
                                  ;; kheaders module also helpful for tracing
@@ -97,50 +116,20 @@
       (inherit base)
       (inputs `(("cpio" ,cpio) ,@(package-inputs base))))))
 
-(define (root-remount-shepherd-service _)
-  (list (shepherd-service
-         (documentation "remount root to apply /etc/fstab settings")
-         (provision '(root-remount))
-         (one-shot? #t)
-         (start #~(make-forkexec-constructor
-                   (list (string-append #$util-linux "/bin/mount") "-o" "remount" "/")))
-         (stop #~(make-kill-destructor)))))
 
-(define-public root-remount-service-type
-  (service-type (name 'root-remount)
-                (description "remount root to apply /etc/fstab settings")
-                (extensions
-                 (list
-                  (service-extension shepherd-root-service-type
-                                     root-remount-shepherd-service)))
-                (default-value '())))
-
-(define-public trackpoint-udev-config
-  (package
-    (name "trackpoint-udev-config")
-    (version "0.1")
-    (source #f)
-    (build-system trivial-build-system)
-    (arguments
-     '(#:modules ((guix build utils))
-       #:builder
-       (begin
-         (use-modules (guix build utils))
-         (mkdir-p (string-append %output "/lib/udev/rules.d/"))
-         (with-output-to-file (string-append %output "/lib/udev/rules.d/10-trackpoint.rules")
-           (lambda _
-             (display "KERNEL==\"serio2\", SUBSYSTEM==\"serio\", DRIVERS==\"psmouse\", ATTR{sensitivity}:=\"255\", ATTR{speed}:=\"255\", ATTR{drift_time}:=\"0\""))))))
-    (synopsis "my trackpoint configuration")
-    (description "my trackpoint configuration")
-    (license license:gpl3)
-    (home-page #f)))
-
-(define-public common-system-config
+(define-public base-system-config
   (operating-system
     (host-name "placeholder")
     (timezone "Europe/Berlin")
     (locale "en_US.utf8")
     (keyboard-layout (keyboard-layout "de" "vup"))
+    (initrd-modules (append '("virtio_crypto" "virtio-gpu" "virtio_pmem" "nd_virtio"
+                              "virtio_scsi" "virtio_rpmsg_bus" "virtio_mem"
+                              "virtio_dma_buf" "virtio_mmio" "virtio"
+                              "virtio_ring" "virtio_input" "virtio_vdpa"
+                              "caif_virtio" "vmw_vsock_virtio_transport"
+                              "vmw_vsock_virtio_transport_common" "9pnet_virtio") %base-initrd-modules))
+
 
     (bootloader (bootloader-configuration
                  (bootloader grub-efi-bootloader)
@@ -153,30 +142,6 @@
 
     (kernel linux-nonfree/extra_config)
     (firmware (append (list linux-firmware-nonfree) %base-firmware))
-    (groups (append %base-groups
-                    (list
-                     (user-group (system? #t) (name "libvirt"))
-                     (user-group (system? #t) (name "adbusers"))
-                     (user-group (system? #t) (name "pulse"))
-                     (user-group (system? #t) (name "pulse-access")))))
-
-    (users (append (list
-                    (user-account
-                     (name "robin")
-                     (comment "owner")
-                     (group "users")
-                     (supplementary-groups '("lp" "wheel" "netdev"
-                                             "audio" "video" "docker" "adbusers"
-                                             "kvm" "pulse-access" "libvirt")))
-                    (user-account
-                     (name "pulse")
-                     (group "pulse")
-                     (home-directory "/var/run/pulse")
-                     (create-home-directory? #f)
-                     (system? #t)
-                     (supplementary-groups '("audio" "lp")))) ; lp for bluetooth access
-                   %base-user-accounts))
-
     (file-systems '())
 
     (packages
@@ -186,37 +151,16 @@
        nss-certs) ;; for HTTPS access
       %base-packages))
 
-    ;; Allow resolution of '.local' host names with mDNS.
-    ;; no idea what this does
     (name-service-switch %mdns-host-lookup-nss)))
 
-(define-public common-services 
-  `(,(service caps2esc-service-type)
-    ,(service root-remount-service-type)
-    ,(service docker-service-type)
-    ,(service cups-pk-helper-service-type)
-
-    ,(service nix-service-type
-              (nix-configuration
-               (build-sandbox-items '("/bin/sh"))))
-
-    ,(service cups-service-type
-              (cups-configuration
-               (web-interface? #t)))
-
-    ,(service polkit-service-type)
+(define-public base-services
+  `(,(service polkit-service-type)
     ,(elogind-service)
     ,(dbus-service)
     ,(accountsservice-service)
     ,(service localed-service-type)
 
-    ,(pam-limits-service
-      (list
-       (pam-limits-entry "robin" 'both 'nofile 100000)
-       (pam-limits-entry "@audio" 'both 'rtprio 99)
-       (pam-limits-entry "@audio" 'both 'memlock 'unlimited)))
     ,(service avahi-service-type)
-    ,(service modem-manager-service-type)
     ,(service ntp-service-type)
     ,(service openssh-service-type
               (openssh-configuration
@@ -238,11 +182,4 @@
         (sysctl-service-type config =>
                        (sysctl-configuration
                          (settings (append '(("kernel.dmesg_restrict" . "0"))
-                                           %default-sysctl-settings))))
-        (udev-service-type config =>
-                           (udev-configuration
-                            (inherit config)
-                            (rules
-                             (append
-                              (udev-configuration-rules config)
-                              (list android-udev-rules python-openant/udev trackpoint-udev-config))))))))
+                                           %default-sysctl-settings)))))))

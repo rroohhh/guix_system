@@ -2,7 +2,7 @@
 
 (use-modules (my-tlp))
 (use-modules (util))
-(use-modules (config-common))
+(use-modules (config-desktop-base))
 
 (use-modules (guix gexp))
 (use-modules (guix packages))
@@ -251,7 +251,7 @@ Users need to be in the @code{lp} group to access the D-Bus service.
               (read-file-as-string "etc-hosts")))
 
 (operating-system
-  (inherit common-system-config)
+  (inherit base-desktop-system-config)
   (host-name "transistor")
   (hosts-file %hosts-file)
 
@@ -296,7 +296,7 @@ Users need to be in the @code{lp} group to access the D-Bus service.
 
   (services
    (append
-    common-services
+    base-desktop-services
     (list
      (bluetooth-service)
 
