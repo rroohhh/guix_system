@@ -153,6 +153,9 @@
 
     (name-service-switch %mdns-host-lookup-nss)))
 
+(define-public ssh-default-authorized-keys `(("robin" ,(local-file "robin.pub"))
+					     ("root"  ,(local-file "robin.pub"))))
+
 (define-public base-services
   `(,(service polkit-service-type)
     ,(elogind-service)
@@ -165,10 +168,7 @@
     ,(service openssh-service-type
               (openssh-configuration
                (x11-forwarding? #t)
-               (permit-root-login 'without-password)
-               (authorized-keys
-                `(("root" ,(local-file "robin.pub"))
-		  ("robin" ,(local-file "robin.pub"))))
+               (authorized-keys ssh-default-authorized-keys)
 	           (extra-content "PermitUserEnvironment yes")))
     ,@(modify-services %base-services
         (guix-publish-service-type config =>
