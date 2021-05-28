@@ -9,3 +9,10 @@ kernel.config
 
 vup.key
 vup.pem
+
+# concourse web
+session_signing_key
+tsa_host_key
+
+# concourse worker
+worker_key

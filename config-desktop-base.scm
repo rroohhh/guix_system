@@ -3,6 +3,7 @@
 (add-to-load-path (dirname (current-filename))) ; for my-tlp.scm
 (use-modules (config-base))
 (use-modules (pulseaudio))
+(use-modules (cgroupv2))
 
 (use-modules (vup patches)) ; really bad hacks, but who cares
 
@@ -14,12 +15,13 @@
 (use-package-modules bootloaders certs wm suckless xorg linux ssh emacs vim version-control mail connman polkit vpn samba admin glib autotools readline documentation pkg-config python tls android rust-apps cpio)
 
 (use-modules (gnu services))
-(use-service-modules desktop avahi dbus xorg shepherd mcron docker networking ssh linux nix cups sysctl)
+(use-service-modules desktop avahi dbus xorg shepherd mcron networking ssh linux nix cups sysctl)
 
 (use-modules (vup linux))
 (use-modules (vup python-xyz))
 (use-modules (vup caps2esc))
 (use-modules (vup hwinfo))
+(use-modules (vup docker))
 
 (use-modules (srfi srfi-1))
 (use-modules (ice-9 match))
@@ -99,7 +101,9 @@
 (define-public base-desktop-services
   `(,(service caps2esc-service-type)
     ,(service root-remount-service-type)
-    ,(service docker-service-type)
+    ,(service docker-service-type
+              (docker-configuration
+               (docker docker)))
     ,(service cups-pk-helper-service-type)
 
     ,(service nix-service-type

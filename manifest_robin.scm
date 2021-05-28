@@ -177,6 +177,7 @@
    amule
    wl-clipboard
    tigervnc-client
+   tigervnc-server
    shaderc
 
    ;; xdk desktop

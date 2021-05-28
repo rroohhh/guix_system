@@ -7,12 +7,15 @@
 (use-modules (gnu) (gnu system nss))
 
 (use-modules (guix packages))
-(use-package-modules ssh vim certs cpio rsync)
+(use-package-modules ssh vim certs cpio linux freedesktop rsync)
 (use-modules (guix utils))
 (use-modules (guix records))
 
 (use-modules (gnu services))
-(use-service-modules dbus desktop xorg avahi networking ssh sysctl)
+(use-service-modules dbus xorg avahi networking ssh sysctl shepherd)
+
+(use-modules ((gnu services desktop)
+              #:select (accountsservice-service)))
 
 (use-modules (vup linux))
 (use-modules (vup hwinfo))
@@ -20,9 +23,11 @@
 (use-modules (srfi srfi-1))
 (use-modules (ice-9 match))
 
+(use-modules (cgroupv2))
+
 (define (config->string options)
   (string-join (map (match-lambda
-                     ((option . 'm)
+                      ((option . 'm)
                        (string-append option "=m"))
                       ((option . #t)
                        (string-append option "=y"))
@@ -121,6 +126,7 @@
      (append
       (list
        rsync
+       xfsprogs
        openssh vim
        nss-certs) ;; for HTTPS access
       %base-packages))
@@ -128,7 +134,7 @@
     (name-service-switch %mdns-host-lookup-nss)))
 
 (define-public ssh-default-authorized-keys `(("robin" ,(local-file "robin.pub"))
-					     ("root"  ,(local-file "robin.pub"))))
+                                             ("root"  ,(local-file "robin.pub"))))
 
 (define-public base-services
   `(,(service polkit-service-type)
@@ -144,16 +150,16 @@
                (permit-root-login 'without-password)
                (x11-forwarding? #t)
                (authorized-keys ssh-default-authorized-keys)
-	           (extra-content "PermitUserEnvironment yes")))
+               (extra-content "PermitUserEnvironment yes")))
     ,(service guix-publish-service-type
               (guix-publish-configuration
                (host "0.0.0.0")
                (advertise? #t)))
     ,@(modify-services %base-services
         (guix-service-type config =>
-			    (guix-configuration
-			      (inherit config)
-  			      (discover? #t)
+                (guix-configuration
+                  (inherit config)
+                  (discover? #t)
                   (authorized-keys
                    (append (list (local-file "ada-signing-key.pub")
                                  (local-file "mel-signing-key.pub"))
