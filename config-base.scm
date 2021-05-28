@@ -7,7 +7,7 @@
 (use-modules (gnu) (gnu system nss))
 
 (use-modules (guix packages))
-(use-package-modules ssh vim certs cpio)
+(use-package-modules ssh vim certs cpio rsync)
 (use-modules (guix utils))
 (use-modules (guix records))
 
@@ -120,6 +120,7 @@
     (packages
      (append
       (list
+       rsync
        openssh vim
        nss-certs) ;; for HTTPS access
       %base-packages))
@@ -140,6 +141,7 @@
     ,(service ntp-service-type)
     ,(service openssh-service-type
               (openssh-configuration
+               (permit-root-login 'without-password)
                (x11-forwarding? #t)
                (authorized-keys ssh-default-authorized-keys)
 	           (extra-content "PermitUserEnvironment yes")))

@@ -4,7 +4,7 @@
 
 (use-modules (gnu))
 (use-modules (gnu system file-systems))
-(use-service-modules networking)
+(use-service-modules networking ssh)
 
 ;; initial setup:
 ;; boot into rescue mode (debian 10)
@@ -48,6 +48,15 @@
                                             #:gateway "167.86.67.1"
                                             #:name-servers '("213.136.95.10" "213.136.95.11" "1.1.1.1" "1.0.0.1"))
                 ,@(modify-services base-services
+                        (openssh-service-type config =>
+                          (openssh-configuration
+                            (inherit config)
+                            (authorized-keys (map
+                              (lambda (key-config)
+                                (if (string=? (car key-config) "root")
+                                    (append key-config `(,(local-file "mel-robin.pub")))
+                                    key-config))
+                             ssh-default-authorized-keys))))
                         (guix-service-type config =>
                                            (guix-configuration
                                              (inherit config)
