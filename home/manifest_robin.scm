@@ -1,6 +1,6 @@
 (use-modules (vup patches))
 
-(use-package-modules wm pciutils video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation vim python-build telegram emacs bootloaders cpio gnupg vnc)
+(use-package-modules wm pciutils video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file docker flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex fpga compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation vim python-build telegram emacs bootloaders cpio gnupg vnc vpn python-crypto sphinx)
 
 (use-modules ((gnu packages python-xyz) #:prefix guix:))
 
@@ -179,6 +179,7 @@
    tigervnc-client
    tigervnc-server
    shaderc
+   openconnect
 
    ;; xdk desktop
    xdg-desktop-portal
@@ -277,6 +278,10 @@
    python-intelhex
    python-networkx
    python-shapely-fixed
+   python-pyflakes
+   python-influxdb
+   python-bcrypt
+   python-sphinx-rtd-theme
    ;; python-descartes
    guix:jupyter
    ;; vup:python-nbconvert-new
