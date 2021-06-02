@@ -1,4 +1,4 @@
-(define-module (bluetooth)
+(define-module (services bluetooth)
   #:use-module (guix records)
   #:use-module (guix gexp)
   #:use-module (gnu packages linux)

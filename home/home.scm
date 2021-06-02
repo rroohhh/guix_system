@@ -1,4 +1,3 @@
-(add-to-load-path (dirname (current-filename))) 
 (use-modules (vup patches))
 
 (use-modules (vup xkeylogger))
@@ -7,7 +6,7 @@
 (use-modules (vup ip_addr))
 (use-modules (vup home i3))
 
-(use-modules (util))
+(use-modules (misc util))
 
 (use-modules (home))
 (use-modules (home bash))
@@ -915,7 +914,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 )))
 
 (define prompt-config
-  (plain-file "prompt.sh" (read-file-as-string "prompt.sh")))
+  (plain-file "prompt.sh" (read-file-as-string "home/prompt.sh")))
 
 (define notifymuch-config
   (plain-file "notifymuch.cfg" "[notifymuch]
@@ -1144,7 +1143,7 @@ fi\n"
       (symlink-file-home "/data/.notmuch-config" ".notmuch-config") ; TODO(robin): move to generated config
       (symlink-file-home "/data/.mbsyncrc" ".mbsyncrc") ; SECRETS, TODO(robin): move to generated config
       (symlink-file-home "/data/.msmtprc" ".msmtprc") ; SECRETS, TODO(robin): move to generated config
-      (symlink-file-home "/data/projects/guix_system/dunstrc" ".config/dunst/dunstrc") ; TODO(robin): move to generated config
+      (symlink-file-home "/data/projects/guix_system/home/dunstrc" ".config/dunst/dunstrc") ; TODO(robin): move to generated config
       (symlink-file-home "/data/robin/log/shepherd.log" "log/shepherd.log")
       (symlink-file-home "/data/robin/.ssh/id_ed25519.pub" ".ssh/id_ed25519.pub")
       (symlink-file-home "/data/robin/.ssh/id_ed25519" ".ssh/id_ed25519")
@@ -1155,8 +1154,8 @@ fi\n"
       (symlink-file-home "/data/robin/.config/kicad" ".config/kicad") ; TODO(robin) what
       (symlink-file-home "/data/robin/.purple" ".purple") ; SECRETS, TODO(robin): figure out what to do about    this one
       (symlink-file-home "/data/projects/doom-emacs" ".emacs.d") ; TODO(robin): figure out this one
-      (symlink-file-home "/data/projects/guix_system/.doom.d" ".doom.d") ; TODO(robin): figure out this one
-      (symlink-file-home "/data/projects/guix_system/.clang-format" ".clang-format") ; TODO(robin): figure out this one
+      (symlink-file-home "/data/projects/guix_system/home/.doom.d" ".doom.d") ; TODO(robin): figure out this one
+      (symlink-file-home "/data/projects/guix_system/home/.clang-format" ".clang-format") ; TODO(robin): figure out this one
       (symlink-file-home "/data/robin/.texlive2018" ".texlive2018")
       (symlink-file-home "/data/robin/.texlive2019" ".texlive2019")
       (symlink-file-home "/data/robin/.Xilinx" ".Xilinx")

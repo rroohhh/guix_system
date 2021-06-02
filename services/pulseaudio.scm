@@ -1,4 +1,4 @@
-(define-module (pulseaudio)
+(define-module (services pulseaudio)
   #:use-module (guix gexp)
   #:use-module (gnu services)
   #:use-module (gnu services dbus)

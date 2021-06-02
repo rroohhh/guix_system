@@ -1,4 +1,4 @@
-(define-module (concourse)
+(define-module (services concourse)
   #:use-module (gnu services)
   #:use-module (gnu services shepherd)
   #:use-module (gnu services databases)

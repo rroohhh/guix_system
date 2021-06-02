@@ -54,10 +54,13 @@
        indent-tabs-mode nil
        fill-column 120
        tab-width 4
+       geiser-default-implementation 'guile
+;       geiser-guile-binary "/run/current-system/profile/bin/guile"
        notmuch-fcc-dirs "sent")
 (after! notmuch
   (setq! notmuch-fcc-dirs "sent"))
 
+; (message "%s" geiser-guile-binary)
 
 (delete-selection-mode 1)
 

@@ -1,4 +1,4 @@
-(define-module (zfs)
+(define-module (services zfs)
   #:use-module (ice-9 match)
   #:use-module (gnu packages file-systems)
   #:use-module (gnu services)
@@ -12,6 +12,7 @@
   #:use-module (guix records)
   #:use-module (guix download)
   #:use-module (guix build-system gnu)
+  #:use-module (config linux)
   #:export (zfs-service-type
 
             zfs-configuration
@@ -25,7 +26,8 @@
             zfs-configuration-auto-snapshot?
             zfs-configuration-auto-snapshot-keep
 
-            %zfs-zvol-dependency))
+            %zfs-zvol-dependency
+            zfs-with-vup-kernel))
 
 (define-public zfs-auto-snapshot
   (package
@@ -359,3 +361,9 @@ FILE-SYSTEM."
         (service-extension udev-service-type
                            (compose list make-zfs-package))))
     (description "Installs ZFS, an advanced filesystem and volume manager.")))
+
+(define zfs-with-vup-kernel
+  (package
+    (inherit zfs)
+    (arguments (cons* #:linux linux-nonfree/extra_config
+                      (package-arguments zfs)))))

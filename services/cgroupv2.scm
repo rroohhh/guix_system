@@ -1,4 +1,4 @@
-(define-module (cgroupv2)
+(define-module (services cgroupv2)
   #:use-module (guix gexp)
   #:use-module (guix packages)
   #:use-module (guix records)

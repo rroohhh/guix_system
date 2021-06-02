@@ -1,4 +1,4 @@
-(define-module (util)
+(define-module (misc util)
   #:export (read-file-as-string)
   #:use-module (ice-9 textual-ports))
 

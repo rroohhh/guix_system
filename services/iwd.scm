@@ -1,4 +1,4 @@
-(define-module (iwd)
+(define-module (services iwd)
   #:use-module (guix download)
   #:use-module (guix git-download)
   #:use-module (guix build-system gnu)

@@ -1,4 +1,4 @@
-(define-module (wireguard)
+(define-module (services wireguard)
   #:use-module (srfi srfi-1)
   #:use-module (guix records)
   #:use-module (guix gexp)

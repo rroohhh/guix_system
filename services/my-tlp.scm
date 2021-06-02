@@ -1,4 +1,4 @@
-(define-module (my-tlp)
+(define-module (services my-tlp)
   #:use-module (gnu services)
   #:use-module (gnu services base)
   #:use-module (gnu services configuration)

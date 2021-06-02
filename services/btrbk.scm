@@ -1,8 +1,9 @@
-(define-module (btrbk)
+(define-module (services btrbk)
   #:use-module (gnu services)
   #:use-module (gnu services mcron)
   #:use-module (guix records)
   #:use-module (guix gexp)
+  #:use-module (vup misc)
   #:export (btrbk-configuration
             btrbk-service-type))
 
