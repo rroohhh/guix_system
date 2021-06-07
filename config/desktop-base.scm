@@ -13,6 +13,7 @@
   #:use-module (gnu services nix)
   #:use-module (gnu services cups)
   #:use-module (gnu services networking)
+  #:use-module (gnu services virtualization)
   #:use-module (gnu packages android)
   #:use-module (vup caps2esc)
   #:use-module (vup docker)
@@ -54,6 +55,10 @@
               (docker-configuration
                (docker docker)))
     ,(service cups-pk-helper-service-type)
+
+    ,(service qemu-binfmt-service-type
+        (qemu-binfmt-configuration
+          (platforms (lookup-qemu-platforms "arm" "aarch64"))))
 
     ,(service nix-service-type
               (nix-configuration
