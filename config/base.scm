@@ -25,7 +25,8 @@
   #:use-module (config linux)
   #:use-module (services cgroupv2)
   #:use-module (ice-9 match)
-  #:use-module (srfi srfi-1))
+  #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-26))
 
 (define-public base-system-config
   (operating-system
@@ -64,6 +65,13 @@
       %base-packages))
 
     (name-service-switch %mdns-host-lookup-nss)))
+
+(define-public aarch64-base-system-config
+  (operating-system
+    (inherit base-system-config)
+    (initrd-modules (remove
+                     (cut member <> '("virtio_mem" "virtio_rpmsg_bus" "caif_virtio"))
+                     (operating-system-initrd-modules base-system-config)))))
 
 (define-public ssh-default-authorized-keys `(("robin" ,(local-file "../data/robin.pub"))
                                              ("root"  ,(local-file "../data/robin.pub"))))
