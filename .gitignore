@@ -1,5 +1,6 @@
 .emacs.d_old
 .doom.d/keys
+home/.doom.d/keys
 heimdal.scm
 wg_mel.key
 new
