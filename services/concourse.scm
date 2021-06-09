@@ -44,6 +44,22 @@
   ;; string
   (external-url           concourse-web-configuration-external-url)
 
+  ;; path
+  (vault-role-id-file     concourse-web-configuration-vault-role-id-file
+                          (default #f))
+
+  ;; path
+  (vault-secret-id-file   concourse-web-configuration-vault-secret-id-file
+                          (default #f))
+
+  ;; string
+  (vault-url              concourse-web-configuration-vault-url
+                          (default #f))
+
+  ;; string
+  (vault-ca-dir           concourse-web-configuration-vault-ca-dir
+                          (default #f))
+
   ;; list of string
   (authorized-worker-keys concourse-web-configuration-authorized-worker-keys
                           (default '())))
@@ -86,13 +102,32 @@
          (documentation "concourse web node")
          (requirement '(networking))
          (provision '(concourse-web))
-         (start #~(make-forkexec-constructor
-                   (append (list #$(file-append (concourse-web-configuration-concourse config)
-                                                "/bin/concourse") "web") (list #$@args))
-                   #:user #$(concourse-web-configuration-user config)
-                   #:log-file "/var/log/concourse-web.log"))
+         (start #~(lambda _
+                    (let* ((extra-args
+                            (if #$(concourse-web-configuration-vault-url config)
+                                (list
+                                 (string-append "--vault-url=" #$(concourse-web-configuration-vault-url config))
+                                 (string-append "--vault-ca-path=" #$(concourse-web-configuration-vault-ca-dir config))
+                                 "--vault-auth-backend=approle")
+                                '()))
+                           (env-vars
+                            (if #$(concourse-web-configuration-vault-url config)
+                                (list
+                                 (string-append
+                                  "CONCOURSE_VAULT_AUTH_PARAM=role_id:"
+                                  (call-with-input-file #$(concourse-web-configuration-vault-role-id-file config) (lambda (port) (get-string-all port)))
+                                  ",secret_id:" (call-with-input-file #$(concourse-web-configuration-vault-secret-id-file config) (lambda (port) (get-string-all port)))))
+                                '()))
+                           (ctor (make-forkexec-constructor
+                                  (append (list #$(file-append (concourse-web-configuration-concourse config)
+                                                               "/bin/concourse") "web") (list #$@args) extra-args)
+                                  #:environment-variables env-vars
+                                  #:user #$(concourse-web-configuration-user config)
+                                  #:log-file "/var/log/concourse-web.log")))
+                      (ctor))))
          (stop #~(make-kill-destructor))
-         (auto-start? #t))))
+         (auto-start? #t)
+         (modules `((ice-9 textual-ports))))))
 
 (define* (concourse-web-accounts config)
   (list
@@ -106,7 +141,7 @@
      (shell (file-append shadow "/sbin/nologin")))))
 
 (define concourse-web-service-type
-  (service-type (name 'openssh)
+  (service-type (name 'concourse-web)
                 (description
                  "run concourse web node")
                 (extensions
@@ -230,7 +265,7 @@
         ;; (chown work-dir (passwd:uid user) (passwd:gid user)))))
 
 (define concourse-worker-service-type
-  (service-type (name 'openssh)
+  (service-type (name 'concourse-worker)
                 (description
                  "run concourse worker node")
                 (extensions
