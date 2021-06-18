@@ -1,7 +1,10 @@
 (define-module (config ada)
   #:use-module (config linux)
   #:use-module (config desktop-base)
+  #:use-module (config network)
+  #:use-module (config network-utils)
   #:use-module (services bluetooth)
+  #:use-module (services influxdb)
   #:use-module (services my-tlp)
   #:use-module (services zfs)
   #:use-module (services hrdj)
@@ -63,6 +66,9 @@
                                               (append
                                                (udev-configuration-rules config)
                                                (list trackpoint-udev-config))))))
+
+       (networking-for host-name)
+
        (list
         (service zfs-service-type
                   (zfs-configuration
@@ -71,6 +77,13 @@
                    (auto-snapshot? #f)))
 
         (bluetooth-service)
+
+        (service telegraf-service-type
+                 (telegraf-configuration
+                  (influxdb-address (string-append "http://" (address-of "mel" host-name) ":8086"))
+                  (influxdb-token-file "/data/projects/guix_system/data/secrets/ada_telegraf_token") ; TODO(robin): use vault??
+                  (influxdb-bucket "monitoring")
+                  (influxdb-orga "infra")))
 
         (service hrdj-device-service-type)
 

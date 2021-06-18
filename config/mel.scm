@@ -1,6 +1,7 @@
 (define-module (config mel)
   #:use-module (config desktop-base)
   #:use-module (config network)
+  #:use-module (config network-utils)
   #:use-module ((config base) #:select (ssh-default-authorized-keys))
   #:use-module (services concourse)
   #:use-module (services btrbk)

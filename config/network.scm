@@ -13,7 +13,7 @@
       ("vup-phone" .  (("address" .  "192.168.3.5")
                        ("pubkey" .   "AwyLbD0GsvjN5mC3dRkPNpDd3ao3a3pcLjAIeXw2flc=")))
       ("ada" .        (("address" .  "192.168.3.6")
-                       ("pubkey" .   "KwyLbD0GsvjN5mC3dRkPNpDd3ao3a3pcLjAIeXw2flc=")))))
+                       ("pubkey" .   "dfPEs++UVK85VMqwINC0LuKAC2c+dxWWcoVJIIDl1GQ=")))))
     ("subnet" .  "24")
     ("net" .    "192.168.3.0")
     ("root" .   "seshat")))
