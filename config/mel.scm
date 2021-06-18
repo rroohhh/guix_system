@@ -1,9 +1,11 @@
 (define-module (config mel)
   #:use-module (config desktop-base)
+  #:use-module (config network)
   #:use-module ((config base) #:select (ssh-default-authorized-keys))
   #:use-module (services concourse)
   #:use-module (services btrbk)
   #:use-module (services secrets)
+  #:use-module (services influxdb)
   #:use-module (services vault)
   #:use-module (ice-9 textual-ports)
   #:use-module (gnu)
@@ -15,6 +17,31 @@
   #:use-module (gnu packages rsync)
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages databases))
+
+(define extra-telegraf-config
+  "[[inputs.postgresql]]
+  ## specify address via a url matching:
+  ##   postgres://[pqgotest[:password]]@localhost[/dbname]\
+  ##       ?sslmode=[disable|verify-ca|verify-full]
+  ## or a simple string:
+  ##   host=localhost user=pqgotest password=... sslmode=... dbname=app_production
+  ##
+  ## All connection parameters are optional.
+  ##
+  ## Without the dbname parameter, the driver will default to a database
+  ## with the same name as the user. This dbname is just for instantiating a
+  ## connection with the server and doesn't restrict the databases we are trying
+  ## to grab metrics for.
+  ##
+  address = \"host=/tmp user=telegraf sslmode=disable\"
+  max_lifetime = \"0s\"
+
+[[inputs.statsd]]
+  parse_data_dog_tags = true
+  datadog_extensions = true
+  datadog_distributions = true
+")
+
 
 (define root-vault-connection
   #~(vault-connection-configuration
@@ -83,12 +110,32 @@
                                    (map (lambda (user)
                                           `(,(car user) ,(local-file (cadddr user)))) extra-users)
                                    ssh-default-authorized-keys)))))
+              (networking-for host-name)
               (list
+               (service influxdb-service-type
+                        (influxdb-configuration
+                         (host "0.0.0.0"))) ; TODO(robin): any way to restrict this more? this would need a way to specify multiple addresses (localhost + 192.168.3.4) or just move everything over to use 192.168.3.4...
+               (simple-service 'telegraf-postgresql-role
+                               postgresql-role-service-type
+                               (list
+                                (postgresql-role
+                                 (name "telegraf")
+                                 (create-database? #t))))
+               (service telegraf-service-type
+                        (telegraf-configuration
+                         (influxdb-token-file "/data/projects/guix_system/data/secrets/mel_telegraf_token") ; TODO(robin): use vault??
+                         (influxdb-bucket "monitoring")
+                         (influxdb-orga "infra")
+                         (config (list
+                                  %telegraf-default-config
+                                  extra-telegraf-config))))
                (service vault-service-type
                         (vault-configuration
+                         (address "0.0.0.0:8200")
                          (ui? #t)
                          (tls-key-file "/data/projects/guix_system/data/secrets/vault.server.key.pem")
-                         (tls-cert-file "/data/projects/guix_system/data/vault.server.cert.pem")))
+                         (tls-cert-file "/data/projects/guix_system/data/vault.server.cert.pem")
+                         (unauthenticated-metrics-access? #t)))
                (service vault-unseal-service-type
                         (vault-unseal-configuration
                          (vault-connection root-vault-connection)
@@ -129,12 +176,14 @@
                               (main-team-local-user "admin")
                               (tsa-host-key "/data/projects/guix_system/data/secrets/tsa_host_key")
                               (authorized-worker-keys '("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCqBfLSGvGdYsmDhE0bqSN38oAbcndV8euE4qiqsKa0RUTg+gIhfzG/HYyUlWFG3eQNpE+v58N8XDD3NQtzqhY5m3ClscVtNpPqYDScoT8+QJDZrJs7yHmOsUP0nm+QBsIJB7YTZhrzcFI5sa2IGghG930Fy+AdtSejwpE5lx1jiaIlFHOaq4FQkbHHhtewWYDqBf/K7boui+/ew+HyyIktiApwuRXyNs2azCC9H2ohjyM12ur+X7Is3bc6awAlLQmjs944sxZC2uHqXF3CYuc5G//zsZPbT94vcssp5OPyQbjBYLlo5/7R7F0GIhDApCEv8OqmO4SCmwj+w3Jqk4abRS6+H+270xnEYE3Rlwi6J2dlkl+r8ON7zQaDl/mc61cyeYh4a66YWq+gW56jdbNNAdC3PDQqaosNbQlWNWhesTlqLV1c8S4S+2YZRrAU+tAIyPi7W5d3VY8jkF3FFqpfs8TI6S4ArrjXAXKZAWOgsOESDxFG/jvGpQQLXx+NNglgo6x9I93FNPFYyr8NYu24be/E9edPkMEZeL4kAgHNrxcEXo7535BOJNfOSkERulHv20Z+uCeBYJEuUs4I889MwmV0btmAltEslITCkJTOWV3Y+uCYJjLNWtUQsmGdGG8lj1qNK4rlLUk+a+qFaiaHinsEGVXaLta7sNckYot1Sw=="))
-                              (external-url "https://ci.vup.niemo.de")
+                              (external-url "https://ci.coroot.de")
                               (session-singing-key "/data/projects/guix_system/data/secrets/session_signing_key")
                               (vault-url "https://127.0.0.1:8200")
                               (vault-ca-dir (vault-cert-dir "/data/projects/guix_system/data/vault.server.cert.pem"))
                               (vault-role-id-file vault-role-id)
-                              (vault-secret-id-file vault-secret-id))))))
+                              (vault-secret-id-file vault-secret-id)
+                              (prometheus-bind-ip "127.0.0.1")
+                              (prometheus-bind-port "8123"))))))
                (service concourse-worker-service-type
                         (concourse-worker-configuration
                          (private-key "/data/projects/guix_system/data/secrets/worker_key")

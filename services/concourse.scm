@@ -60,6 +60,30 @@
   (vault-ca-dir           concourse-web-configuration-vault-ca-dir
                           (default #f))
 
+  ;; influxdb url for metrics
+  (influxdb-url           concourse-web-configuration-influxdb-url
+                          (default #f))
+
+  ;; influxdb database
+  (influxdb-database      concourse-web-configuration-influxdb-database
+                          (default #f))
+
+  ;; influxdb username
+  (influxdb-username      concourse-web-configuration-influxdb-username
+                          (default #f))
+
+  ;; influxdb password
+  (influxdb-password-file concourse-web-configuration-influxdb-password-file
+                          (default #f))
+
+  ;; prometheus bind ip
+  (prometheus-bind-ip     concourse-web-configuration-prometheus-bind-ip
+                          (default #f))
+
+  ;; prometheus bind port
+  (prometheus-bind-port   concourse-web-configuration-prometheus-bind-port
+                          (default #f))
+
   ;; list of string
   (authorized-worker-keys concourse-web-configuration-authorized-worker-keys
                           (default '())))
@@ -90,6 +114,7 @@
                (string-append "--add-local-user=" (car local-user) ":" (cadr local-user)))
              (concourse-web-configuration-local-users config))
       ,(string-append "--main-team-local-user=" (concourse-web-configuration-main-team-local-user config))
+      ,(string-append "--metrics-attribute=source:concourse-web")
       ,(string-append "--session-signing-key=" (concourse-web-configuration-session-signing-key config))
       ,(string-append "--tsa-host-key=" (concourse-web-configuration-tsa-host-key config))
       ,#~(string-append "--tsa-authorized-keys=" #$tsa-authorized-worker-keys)
@@ -103,14 +128,21 @@
          (requirement '(networking))
          (provision '(concourse-web))
          (start #~(lambda _
-                    (let* ((extra-args
+                    (let* ((vault-extra-args
                             (if #$(concourse-web-configuration-vault-url config)
                                 (list
                                  (string-append "--vault-url=" #$(concourse-web-configuration-vault-url config))
                                  (string-append "--vault-ca-path=" #$(concourse-web-configuration-vault-ca-dir config))
                                  "--vault-auth-backend=approle")
                                 '()))
-                           (env-vars
+                           (prometheus-extra-args
+                            (if #$(concourse-web-configuration-prometheus-bind-ip config)
+                                (list
+                                 (string-append "--prometheus-bind-ip=" #$(concourse-web-configuration-prometheus-bind-ip config))
+                                 (string-append "--prometheus-bind-port=" #$(concourse-web-configuration-prometheus-bind-port config)))
+                                '()))
+                           (extra-args (append vault-extra-args prometheus-extra-args))
+                           (vault-env-vars
                             (if #$(concourse-web-configuration-vault-url config)
                                 (list
                                  (string-append
@@ -118,6 +150,15 @@
                                   (call-with-input-file #$(concourse-web-configuration-vault-role-id-file config) (lambda (port) (get-string-all port)))
                                   ",secret_id:" (call-with-input-file #$(concourse-web-configuration-vault-secret-id-file config) (lambda (port) (get-string-all port)))))
                                 '()))
+                           (influxdb-env-vars
+                            (if #$(concourse-web-configuration-influxdb-url config)
+                                (list
+                                 (string-append "CONCOURSE_INFLUXDB_URL=" #$(concourse-web-configuration-influxdb-url config))
+                                 (string-append "CONCOURSE_INFLUXDB_DATABASE=" #$(concourse-web-configuration-influxdb-database config))
+                                 (string-append "CONCOURSE_INFLUXDB_USERNAME=" #$(concourse-web-configuration-influxdb-username config))
+                                 (string-append "CONCOURSE_INFLUXDB_PASSWORD=" (call-with-input-file #$(concourse-web-configuration-influxdb-password-file config) (lambda (port) (get-string-all port)))))
+                                '()))
+                           (env-vars (append vault-env-vars influxdb-env-vars))
                            (ctor (make-forkexec-constructor
                                   (append (list #$(file-append (concourse-web-configuration-concourse config)
                                                                "/bin/concourse") "web") (list #$@args) extra-args)

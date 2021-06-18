@@ -55,8 +55,8 @@
 
            (for-each
             (match-lambda
-             ((public-key allowed-ips endpoint)
-               (format port "\n[Peer]\nPublicKey = ~a\nAllowedIPs = ~a\nEndpoint = ~a\nPersistentKeepalive = 10\n" public-key allowed-ips endpoint)))
+             ((public-key allowed-ips endpoint
+               (format port "\n[Peer]\nPublicKey = ~a\nAllowedIPs = ~a\nEndpoint = ~a\nPersistentKeepalive = 10\n" public-key allowed-ips endpoint))))
             '#$(wireguard-configuration-peers config))
            #t)))
    #:options

@@ -36,6 +36,13 @@
   (ui?                    vault-configuration-ui?
                           (default #f))
 
+  ;; telemetry provider
+  (telemetry              vault-configuration-telemetry
+                          (default #f))
+
+  (unauthenticated-metrics-access? vault-configuration-unauthenticated-metrics-access?
+                          (default #f))
+
   ;; path
   (tls-key-file           vault-configuration-tls-key-file)
 
@@ -62,6 +69,16 @@
               (format port (string-append "    adress = \"" #$(vault-configuration-address config) "\"\n"))
               (format port (string-append "    tls_key_file = \"" #$(vault-configuration-tls-key-file config) "\"\n"))
               (format port (string-append "    tls_cert_file = \"" #$(vault-configuration-tls-cert-file config) "\"\n"))
+              (format port "telemetry {\n")
+              (format port "      unauthenticated_metrics_access = ~a\n" (if #$(vault-configuration-unauthenticated-metrics-access? config) "true" "false"))
+              ;; TODO(robin): is this a guix bug???
+              (let ((telemetry '#$(vault-configuration-telemetry config)))
+                (when telemetry
+                 (format port (string-append "      " (car telemetry) " = \"" (cadr telemetry) "\"\n"))
+                 (format port "      dogstatsd_tags = [\"vault\"]\n")))
+              (format port "  }\n")
+              (format port "}\n")
+              (format port "telemetry {\n")
               (format port "}\n")
               #t)))
      #:options '(#:local-build? #t

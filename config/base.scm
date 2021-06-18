@@ -94,6 +94,7 @@
     ,(service guix-publish-service-type
               (guix-publish-configuration
                (host "0.0.0.0")
+               (port 12734)
                (advertise? #t)))
     ,@(modify-services %base-services
         (guix-service-type config =>
@@ -106,5 +107,6 @@
                            %default-authorized-guix-keys))))
         (sysctl-service-type config =>
                        (sysctl-configuration
-                         (settings (append '(("kernel.dmesg_restrict" . "0"))
+                         (settings (append '(("kernel.dmesg_restrict" . "0")
+                                             ("net.ipv4.ip_forward" . "1"))
                                            %default-sysctl-settings)))))))

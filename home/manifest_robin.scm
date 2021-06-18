@@ -18,6 +18,7 @@
 (use-modules (vup unrar))
 (use-modules (vup x))
 (use-modules (vup solvespace))
+(use-modules (vup concourse))
 
 
 
@@ -180,6 +181,7 @@
    tigervnc-server
    shaderc
    openconnect
+   fly
 
    ;; xdk desktop
    xdg-desktop-portal
