@@ -15,8 +15,11 @@
   #:use-module (gnu services databases)
   #:use-module (gnu services ssh)
   #:use-module (gnu packages databases)
+  #:use-module (gnu packages bash)
+  #:use-module (gnu packages admin)
   #:use-module (guix utils)
   #:use-module (guix modules)
+  #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26))
 
 ;; initial setup:
@@ -50,8 +53,7 @@
 
 (define (caddy-configs host-name)
   (let* ((host "coroot.de")
-         (simple-configs '(("vault.<host>" "mel" "8200")
-                           ("influx.<host>" "mel" "8086")
+         (simple-configs '(("influx.<host>" "mel" "8086")
                            ("ci.<host>" "mel" "8080")
                            ("git.froheiyd.de" "rofydi" "3000"))))
     (with-imported-modules (source-module-closure* '((config network))) ; TODO(robin): write a better version of source-module-closure to use here
@@ -66,6 +68,13 @@
                      (format #f "~a { reverse_proxy * ~a:~a }" (car config) (address-of (cadr config) #$host-name) (caddr config)))
                    '#$simple-configs)
                 "<host> { reverse_proxy /scrabble localhost:48443 }" ;; scrabble
+                ,(string-append "vault.<host> {
+reverse_proxy * https://" (address-of "mel" #$host-name) ":8200 {
+  transport http {
+    tls_insecure_skip_verify
+  }
+}
+}") ;; scrabble
                 ,(string-append "bh.<host> {
 root * " #$boulderhaus-booking-webui "
 reverse_proxy /api/* localhost:5558
@@ -102,10 +111,26 @@ log {
   max_lifetime = \"0s\"
 ")
 
+(define extra-users
+  `(("anuejn" "users" ("wheel" "netdev" "audio" "video" "kvm")"data/anuejn.pub")
+    ("tpw_rules" "users" () "data/tpw_rules.pub" ,(file-append shadow "/sbin/nologin"))))
 
 (define-public seshat-system-config
   (operating-system
    (inherit base-system-config)
+
+   (hosts-file etc-hosts-file)
+
+   (users (append (map (lambda (user)
+                         (user-account
+                          (name (car user))
+                          (group (cadr user))
+                          (supplementary-groups (caddr user))
+                          (shell (if (eq? (length user) 5)
+                                     (last user)
+                                     (file-append bash "/bin/bash")))))
+                       extra-users)
+                  (operating-system-users base-system-config)))
 
    (host-name "seshat")
 
@@ -169,12 +194,15 @@ log {
                    config => (openssh-configuration
                               (inherit config)
                               (authorized-keys
-                               (map
-                                (lambda (key-config)
-                                  (if (string=? (car key-config) "root")
-                                      (append key-config `(,(local-file "../data/mel-robin.pub")))
-                                      key-config))
-                                ssh-default-authorized-keys)))))))))
+                               (append
+                                (map (lambda (user)
+                                       `(,(car user) ,(local-file (cadddr user)))) extra-users)
+                                (map
+                                 (lambda (key-config)
+                                   (if (string=? (car key-config) "root")
+                                       (append key-config `(,(local-file "../data/mel-robin.pub")))
+                                       key-config))
+                                 ssh-default-authorized-keys))))))))))
                                  
 (list (machine
        (operating-system seshat-system-config)

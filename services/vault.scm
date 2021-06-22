@@ -66,7 +66,7 @@
               (format port (string-append "    path = \"" #$(vault-configuration-data-dir config) "\"\n"))
               (format port "}\n")
               (format port "listener \"tcp\" {\n")
-              (format port (string-append "    adress = \"" #$(vault-configuration-address config) "\"\n"))
+              (format port (string-append "    address = \"" #$(vault-configuration-address config) "\"\n"))
               (format port (string-append "    tls_key_file = \"" #$(vault-configuration-tls-key-file config) "\"\n"))
               (format port (string-append "    tls_cert_file = \"" #$(vault-configuration-tls-cert-file config) "\"\n"))
               (format port "telemetry {\n")
