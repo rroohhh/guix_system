@@ -1,4 +1,5 @@
 (define-module (services boulderhaus)
+  #:use-module (vup python-xyz)
   #:use-module (gnu)
   #:use-module (gnu services)
   #:use-module (gnu services shepherd)
@@ -35,20 +36,22 @@
 (define-public boulderhaus-booking-server
   (package
     (name "boulderhaus-booking-server")
-    (version "0.0.1-475e5a9")
+    (version "0.0.1-4c46c7e")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/rroohhh/boulderhaus_booking")
-                    (commit "475e5a94636448b0eec463d7d0afec6b314612a3")))
+                    (commit "4c46c7ef1802dfed9bca6151cdf84eecaffba3f1")))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0m8n81674ygz85b9g25b6dzcr3jkhs8039nqjaknmml74frmzdan"))))
+                "15h12nz8cwm8xmraybvpfaqyssqm39f2y29vbpxrcgp5iwx7hjdq"))))
     (build-system python-build-system)
     (propagated-inputs `(("pyquery" ,python-pyquery)
                          ("flask" ,python-flask)
-                         ("requests" ,python-requests)))
+                         ("requests" ,python-requests)
+                         ("influxdb" ,python-influxdb-client)
+                         ("tinycss2" ,python-tinycss2)))
     (synopsis "Boulderhaus Heidelberg booking server")
     (description "Boulderhaus Heidelberg booking server")
     (home-page "https://github.com/rroohhh/boulderhaus_booking")
