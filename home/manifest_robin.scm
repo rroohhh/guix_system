@@ -192,7 +192,7 @@
    pinentry
 
    ;; audio
-   pipewire
+   pipewire-0.3
    carla
    rnnoise
    rev-plugins
@@ -387,7 +387,7 @@
    xcb-util
    freetype
    libinput
-   ;; ninja
+   ninja
    alsa-lib
    libevent
    nspr

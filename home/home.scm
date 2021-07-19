@@ -913,6 +913,12 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
 ;; (start 'natural-scrolling:0)
 )))
 
+(define asoundrc
+  (mixed-text-file "asoundrc" "pcm_type.pipewire {
+lib \"" pipewire-0.3 "/lib/alsa-lib/libasound_module_pcm_pipewire.so\"
+}
+" (read-file-as-string "home/asoundrc")))
+
 (define prompt-config
   (plain-file "prompt.sh" (read-file-as-string "home/prompt.sh")))
 
@@ -1132,6 +1138,7 @@ fi\n"
       (simple-file-home i3blocks-config ".config/i3blocks/config")
       (simple-file-home gtk3-settings ".config/gtk-3.0/settings.ini")
       (simple-file-home inputrc ".inputrc")
+      (simple-file-home asoundrc ".asoundrc")
       (simple-file-home notifymuch-config ".config/notifymuch/notifymuch.cfg")
       (simple-file-home tmux-config ".tmux.conf")
       (simple-file-home ideavim-config ".ideavimrc")
@@ -1151,6 +1158,7 @@ fi\n"
       ; (symlink-file-home "/data/robin/.config/pavucontrol.ini" ".config/pavucontrol.ini") ; TODO(robin): figure out why this is not working
       (symlink-file-home "/data/.config/quassel-irc.org" ".config/quassel-irc.org") ; SECRETS, TODO(robin): figure out what to do about quassel config, it is quite shitty (and semi binary?)
       (symlink-file-home "/data/.config/horizon" ".config/horizon") ; TODO(robin): maybe generate the color scheme from here?
+      (symlink-file-home "/data/.config/JetBrains" ".config/JetBrains") ; TODO(robin): maybe generate the color scheme from here?
       (symlink-file-home "/data/robin/.config/kicad" ".config/kicad") ; TODO(robin) what
       (symlink-file-home "/data/robin/.purple" ".purple") ; SECRETS, TODO(robin): figure out what to do about    this one
       (symlink-file-home "/data/projects/doom-emacs" ".emacs.d") ; TODO(robin): figure out this one
