@@ -12,7 +12,8 @@
   #:use-module (guix build-system copy)
   #:use-module (guix build-system python)
   #:use-module (guix records)
-  #:use-module ((guix licenses) #:prefix license:))
+  #:use-module ((guix licenses) #:prefix license:)
+  #:export (bhbooking-configuration bhscraping-configuration))
 
 (define-public boulderhaus-booking-webui
   (package
@@ -119,3 +120,64 @@
                                           bhbooking-accounts)
                        (service-extension activation-service-type
                                           bhbooking-activation)))))
+
+(define-record-type* <bhscraping-configuration>
+  bhscraping-configuration make-bhscraping-configuration
+  bhscraping-configuration?
+  ;; <package>
+  (server                 bhscraping-configuration-server
+                          (default boulderhaus-booking-server))
+
+  ;; user to run it under
+  (user                   bhscraping-configuration-user
+                          (default "bhscraping"))
+  ;; string
+  (influxdb-host          bhscraping-configuration-influxdb-host
+                          (default "localhost:8086"))
+
+  ;; <path>
+  (influxdb-token-file    bhscraping-configuration-influxdb-token-file))
+
+
+(define (bhscraping-shepherd-service config)
+  "Return a <shepherd-service> for bhscraping with CONFIG."
+
+  (list (shepherd-service
+         (documentation "boulderhaus scraper node")
+         (requirement '(networking))
+         (provision '(bhscraping))
+         (start #~ (lambda _
+                     (let* ((env-vars (list
+                                       (string-append
+                                        "INFLUXDB_TOKEN="
+                                        (call-with-input-file #$(bhscraping-configuration-influxdb-token-file config) (lambda (port) (get-string-all port))))
+                                       (string-append "INFLUXDB_HOST=" #$(bhscraping-configuration-influxdb-host config))))
+                            (ctor (make-forkexec-constructor
+                                   (list #$(file-append (bhscraping-configuration-server config) "/bin/trafficlight.py"))
+                                   #:user #$(bhscraping-configuration-user config)
+                                   #:environment-variables env-vars
+                                   #:log-file "/var/log/bhscraping.log")))
+                       (ctor))))
+         (stop #~(make-kill-destructor))
+         (auto-start? #t))))
+
+(define* (bhscraping-accounts config)
+  (list
+    (user-group (name (bhscraping-configuration-user config)) (system? #t))
+    (user-account
+     (name (bhscraping-configuration-user config))
+     (group (bhscraping-configuration-user config))
+     (system? #t)
+     (comment "bhscraping user")
+     (home-directory "/var/empty")
+     (shell (file-append shadow "/sbin/nologin")))))
+
+(define-public bhscraping-service-type
+  (service-type (name 'bhscraping)
+                (description
+                 "run bhscraping node")
+                (extensions
+                 (list (service-extension shepherd-root-service-type
+                                          bhscraping-shepherd-service)
+                       (service-extension account-service-type
+                                          bhscraping-accounts)))))

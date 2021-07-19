@@ -158,6 +158,10 @@ log {
                                            #:gateway "167.86.67.1"
                                            #:name-servers '("213.136.95.10" "213.136.95.11" "1.1.1.1" "1.0.0.1"))
                ,(service bhbooking-service-type)
+               ,(service bhscraping-service-type
+                         (bhscraping-configuration
+                          (influxdb-host (string-append "http://" (address-of "mel" host-name) ":8086"))
+                          (influxdb-token-file "/secrets/bhscraping_influxdb_token")))
                ,(service postgresql-service-type
                          (postgresql-configuration
                           (postgresql postgresql-13)))

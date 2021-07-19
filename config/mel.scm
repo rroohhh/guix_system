@@ -43,6 +43,33 @@
   datadog_distributions = true
 ")
 
+(define syslog.conf
+  (plain-file "syslog.conf" "
+     # Log all error messages, authentication messages of
+     # level notice or higher and anything of level err or
+     # higher to the console.
+     # Don't log private authentication messages!
+     *.alert;auth.notice;authpriv.none       /dev/console
+
+     # Log anything (except mail) of level info or higher.
+     # Don't log private authentication messages!
+     *.info;mail.none;authpriv.none          /var/log/messages
+
+     # Like /var/log/messages, but also including \"debug\"-level logs.
+     *.debug;mail.none;authpriv.none         /var/log/debug
+
+     # Same, in a different place.
+     *.info;mail.none;authpriv.none          /dev/tty12
+
+     # The authpriv file has restricted access.
+     authpriv.*                              /var/log/secure
+
+     # Log all the mail messages in one place.
+     mail.*                                  /var/log/maillog
+
+     # Log everything to localhost
+     *.debug                                 @localhost:5155
+"))
 
 (define root-vault-connection
   #~(vault-connection-configuration
@@ -102,15 +129,23 @@
 
    (services (append
               (modify-services base-desktop-services
-                               (openssh-service-type
-                                config =>
-                                (openssh-configuration
-                                 (inherit config)
-                                 (authorized-keys
-                                  (append
-                                   (map (lambda (user)
-                                          `(,(car user) ,(local-file (cadddr user)))) extra-users)
-                                   ssh-default-authorized-keys)))))
+                (syslog-service-type
+                 config =>
+                 (syslog-configuration
+                  (inherit config)
+                  (config-file syslog.conf)))
+                    
+                                  
+                                
+                (openssh-service-type
+                 config =>
+                 (openssh-configuration
+                  (inherit config)
+                  (authorized-keys
+                   (append
+                    (map (lambda (user)
+                           `(,(car user) ,(local-file (cadddr user)))) extra-users)
+                    ssh-default-authorized-keys)))))
               (networking-for host-name)
               (list
                (service influxdb-service-type
