@@ -57,6 +57,7 @@
          (simple-configs '(("influx.<host>" "mel" "8086")
                            ("ci.<host>" "mel" "8080")
                            ("stream.<host>" "seshat" "8888")
+                           ("files.<host>" "mel" "8000")
                            ("git.froheiyd.de" "rofydi" "3000"))))
     (with-imported-modules (source-module-closure* '((config network))) ; TODO(robin): write a better version of source-module-closure to use here
         #~(begin
