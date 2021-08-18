@@ -2,6 +2,7 @@
   #:use-module (gnu services)
   #:use-module (gnu services shepherd)
   #:use-module (gnu system shadow)
+  #:use-module (gnu system setuid)
   #:use-module (gnu packages admin)
   #:use-module (gnu packages linux)
   #:use-module (vup influxdb)
@@ -278,4 +279,4 @@
                                           telegraf-activation)
                        (service-extension setuid-program-service-type
                                           (lambda _
-                                            (list (file-append smartmontools "/sbin/smartctl"))))))))
+                                            (list (file-like->setuid-program (file-append smartmontools "/sbin/smartctl")))))))))
