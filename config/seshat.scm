@@ -58,6 +58,7 @@
                            ("ci.<host>" "mel" "8080")
                            ("stream.<host>" "seshat" "8888")
                            ("files.<host>" "mel" "8000")
+                           ("ada.<host>" "ada" "8000")
                            ("git.froheiyd.de" "rofydi" "3000"))))
     (with-imported-modules (source-module-closure* '((config network))) ; TODO(robin): write a better version of source-module-closure to use here
         #~(begin
@@ -381,7 +382,7 @@ paths:
        (type "ext4")))
      %base-file-systems))
 
-   (services `(,(static-networking-service "eth0" "167.86.67.237"
+   (services `(,(static-networking-service "eth0" "167.86.67.237/24"
                                            #:gateway "167.86.67.1"
                                            #:name-servers '("213.136.95.10" "213.136.95.11" "1.1.1.1" "1.0.0.1"))
                ,(service rtsp-simple-server-service-type

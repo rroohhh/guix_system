@@ -18,8 +18,8 @@
              (bashrc `(,bashrc))))
 
    (simple-service 'some-useful-env-vars-service
-        home-environment-variables-service-type
-        `(("QT_QPA_PLATFORM" . "wayland")
+		home-environment-variables-service-type
+		`(("QT_QPA_PLATFORM" . "wayland")
           ("XDG_SESSION_TYPE" . "wayland")
           ("GDK_BACKEND" . "wayland")
           ("_JAVA_AWT_WM_NONREPARENTING" . #t)))

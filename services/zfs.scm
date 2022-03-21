@@ -1,6 +1,6 @@
 (define-module (services zfs)
   #:use-module (ice-9 match)
-  #:use-module (gnu packages file-systems)
+  #:use-module (vup linux)
   #:use-module (gnu services)
   #:use-module (gnu services base)
   #:use-module (gnu services linux)

@@ -3,6 +3,8 @@
   #:use-module (ice-9 match)
   #:use-module (guix packages)
   #:use-module (guix utils)
+  #:use-module (guix download)
+  #:use-module (guix gexp)
   #:use-module (gnu packages cpio))
 
 (define (config->string options)
@@ -30,23 +32,25 @@
     (arguments
      (substitute-keyword-arguments (package-arguments base)
        ((#:phases phases)
-        `(modify-phases ,phases
-           (add-after 'configure 'add-extra-options
-             (lambda* (#:key inputs native-inputs target #:allow-other-keys)
-               (setenv "EXTRA_VERSION" ,extra-version)
+        #~(modify-phases #$phases
+            (add-after 'configure 'add-extra-options
+              (lambda* (#:key inputs native-inputs target #:allow-other-keys)
+                (setenv "EXTRA_VERSION" #$extra-version)
 
-               (let ((port (open-file ".config" "a"))
-                     (extra-configuration ,(config->string extra-options)))
-                 (display extra-configuration port)
-                 (close-port port))
+                (let ((port (open-file ".config" "a"))
+                      (extra-configuration #$(config->string extra-options)))
+                  (display extra-configuration port)
+                  (close-port port))
 
-               (invoke "make" "oldconfig")))))))))
+                (invoke "make" "oldconfig")))))))))
+
+
 
 (define-public linux-nonfree/extra_config
   (let ((base
          (make-linux* linux-nonfree
                #:extra-version "vup"
-               #:extra-options `( ;; Needed for probes
+               #:extra-options `(;; Needed for probes
                                  ("CONFIG_UPROBE_EVENTS" . #t)
                                  ("CONFIG_KPROBE_EVENTS" . #t)
                                  ;; kheaders module also helpful for tracing
@@ -74,4 +78,14 @@
                                  ("CONFIG_DRM_I915_LOW_LEVEL_TRACEPOINTS" . #t)))))
     (package
       (inherit base)
-      (inputs `(("cpio" ,cpio) ,@(package-inputs base))))))
+      (inputs `(("cpio" ,cpio) ,@(package-inputs base)))
+      (source
+       (origin
+         (inherit (package-source base))
+         (patches
+          (append
+              (origin-patches (package-source base))
+              (list (origin
+                     (method url-fetch)
+                     (uri "https://raw.githubusercontent.com/bkerler/mtkclient/main/Setup/Linux/kernelpatches/disable-usb-checks-5.10.patch")
+                     (sha256 "12xsfnckpqzgcnxmd1xgpiibgxasl6k7ina0ckj3cn1dgy4g2lss"))))))))))

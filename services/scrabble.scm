@@ -36,7 +36,7 @@
          (provision '(scrabble-server))
          (start #~(make-forkexec-constructor
                    (list #$(file-append (scrabble-configuration-scrabble config)
-                                        "/bin/ScrabbleServer") "-Protocol" "true" "-Logstdout" "-ServerUrl" #$(scrabble-configuration-address config))
+                                        "/bin/ScrabbleServer") "-Protocol" "-Logstdout" "-ServerUrl" #$(scrabble-configuration-address config))
                    #:user #$(scrabble-configuration-user config)
                    #:directory #$(scrabble-configuration-data-dir config)
                    #:log-file "/var/log/scrabble-server.log"))

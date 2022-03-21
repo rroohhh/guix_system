@@ -136,9 +136,9 @@
       (lambda () (kill-buffer remember-notes-buffer-name)
         (remember-notes)))
 
-(plist-put! +ligatures-extra-symbols
-            :not           "¬"
-            :return "⟼")
+; (plist-put! +ligatures-extra-symbols
+;             :not           "¬"
+;             :return "⟼")
 
 (setq send-mail-function 'sendmail-send-it
       sendmail-program "msmtp"

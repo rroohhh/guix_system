@@ -23,8 +23,7 @@
                (require 'cl-lib)
                (cl-pushnew root-dir* geiser-guile-load-path :test #'string-equal))))
      (eval setq-local guix-directory
-           (locate-dominating-file default-directory ".dir-locals.el"))))
- '(warning-suppress-types '((before-save-hook))))
+           (locate-dominating-file default-directory ".dir-locals.el")))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

@@ -19,7 +19,17 @@
   #:use-module (gnu services networking)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages gnome)
-  #:use-module (vup hwinfo))
+  #:use-module (vup hwinfo)
+  #:use-module (vup linux))
+
+(define extra-telegraf-config
+  #~(string-append
+     "[[inputs.execd]]
+  command = [\"" #$(file-append zfs "/libexec/zfs/zpool_influxdb") "\", \"-e\"]
+  signal = \"STDIN\"
+
+"))
+
 
 (define-public ada-system-config
   (operating-system
@@ -78,12 +88,15 @@
 
         (bluetooth-service)
 
-        (service telegraf-service-type
-                 (telegraf-configuration
-                  (influxdb-address (string-append "http://" (address-of "mel" host-name) ":8086"))
-                  (influxdb-token-file "/data/projects/guix_system/data/secrets/ada_telegraf_token") ; TODO(robin): use vault??
-                  (influxdb-bucket "monitoring")
-                  (influxdb-orga "infra")))
+        ;; (service telegraf-service-type
+        ;;          (telegraf-configuration
+        ;;           (influxdb-address (string-append "http://" (address-of "mel" host-name) ":8086"))
+        ;;           (influxdb-token-file "/data/projects/guix_system/data/secrets/ada_telegraf_token") ; TODO(robin): use vault??
+        ;;           (influxdb-bucket "monitoring")
+        ;;           (influxdb-orga "infra")
+        ;;           (config (list
+        ;;                    %telegraf-default-config
+        ;;                    extra-telegraf-config))))
 
         (service hrdj-device-service-type)
 
