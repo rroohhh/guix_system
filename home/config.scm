@@ -3,8 +3,8 @@
   #:use-module ((gnu packages emacs) #:prefix guix:)
   #:export (vup keys* keys gruvbox-dark theme* theme))
 
-(define-public emacs emacs-pgtk-native-comp)
-;; (define-public emacs guix:emacs)
+;; (define-public emacs emacs-pgtk-native-comp)
+(define-public emacs guix:emacs)
 
 (define-public monospace-font "Hack")
 

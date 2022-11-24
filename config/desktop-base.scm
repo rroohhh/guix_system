@@ -14,9 +14,11 @@
   #:use-module (gnu services cups)
   #:use-module (gnu services networking)
   #:use-module (gnu services virtualization)
+  #:use-module (gnu services linux)
+  #:use-module (gnu services desktop)
   #:use-module (gnu packages android)
   #:use-module (vup caps2esc)
-  #:use-module (vup docker)
+  ;; #:use-module (vup docker)
   #:use-module (vup python-xyz))
 
 (define-public base-desktop-system-config
@@ -35,7 +37,8 @@
                      (comment "owner")
                      (group "users")
                      (supplementary-groups '("lp" "wheel" "netdev"
-                                             "audio" "video" "docker" "adbusers"
+                                             "audio" "video" "docker"
+                                             "adbusers"
                                              "kvm" "pulse-access" "libvirt")))
                     (user-account
                      (name "pulse")
@@ -49,11 +52,18 @@
     (file-systems '())))
 
 (define-public base-desktop-services
-  `(,(service caps2esc-service-type)
+  `(
+    ,(service caps2esc-service-type)
     ,(service root-remount-service-type)
     ,(service docker-service-type
               (docker-configuration
-               (docker docker)))
+               (config (plain-file "daemon.json"
+                                          "{
+  \"ipv6\": false,
+  \"bip\": \"172.39.1.5/24\",
+  \"fixed-cidr\": \"172.39.1.0/25\"
+}
+"))))
     ,(service cups-pk-helper-service-type)
 
     ,(service qemu-binfmt-service-type
@@ -68,9 +78,13 @@
               (cups-configuration
                (web-interface? #t)))
 
+    ,(udisks-service)
+
+    ,(service earlyoom-service-type)
+
     ,(pam-limits-service
       (list
-       (pam-limits-entry "robin" 'both 'nofile 100000)
+       (pam-limits-entry "robin" 'both 'nofile 1000000)
        (pam-limits-entry "@audio" 'both 'rtprio 99)
        (pam-limits-entry "@audio" 'both 'memlock 'unlimited)))
     ,(service modem-manager-service-type)
@@ -82,3 +96,4 @@
                              (append
                               (udev-configuration-rules config)
                               (list android-udev-rules python-openant/udev))))))))
+    

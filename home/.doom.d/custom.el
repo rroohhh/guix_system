@@ -4,7 +4,55 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(safe-local-variable-values
-   '((eval modify-syntax-entry 43 "'")
+   '((eval with-eval-after-load 'yasnippet
+           (let
+               ((guix-yasnippets
+                 (expand-file-name "etc/snippets/yas"
+                                   (locate-dominating-file default-directory ".dir-locals.el"))))
+             (unless
+                 (member guix-yasnippets yas-snippet-dirs)
+               (add-to-list 'yas-snippet-dirs guix-yasnippets)
+               (yas-reload-all))))
+     (eval ignore-errors
+           (require 'whitespace)
+           (whitespace-mode 1))
+     (whitespace-style face indentation)
+     (eval progn
+           (c-set-offset 'case-label '0)
+           (c-set-offset 'innamespace '0)
+           (c-set-offset 'inline-open '0))
+     (eval with-eval-after-load 'yasnippet
+           (let
+               ((guix-yasnippets
+                 (expand-file-name "etc/snippets"
+                                   (locate-dominating-file default-directory ".dir-locals.el"))))
+             (unless
+                 (member guix-yasnippets yas-snippet-dirs)
+               (add-to-list 'yas-snippet-dirs guix-yasnippets)
+               (yas-reload-all))))
+     (eval add-to-list 'completion-ignored-extensions ".go")
+     (eval progn
+           (require 'lisp-mode)
+           (defun emacs27-lisp-fill-paragraph
+               (&optional justify)
+             (interactive "P")
+             (or
+              (fill-comment-paragraph justify)
+              (let
+                  ((paragraph-start
+                    (concat paragraph-start "\\|\\s-*\\([(;\"]\\|\\s-:\\|`(\\|#'(\\)"))
+                   (paragraph-separate
+                    (concat paragraph-separate "\\|\\s-*\".*[,\\.]$"))
+                   (fill-column
+                    (if
+                        (and
+                         (integerp emacs-lisp-docstring-fill-column)
+                         (derived-mode-p 'emacs-lisp-mode))
+                        emacs-lisp-docstring-fill-column fill-column)))
+                (fill-paragraph justify))
+              t))
+           (setq-local fill-paragraph-function #'emacs27-lisp-fill-paragraph))
+     (eval modify-syntax-entry 43 "'")
      (eval modify-syntax-entry 36 "'")
      (eval modify-syntax-entry 126 "'")
      (eval let

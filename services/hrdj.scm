@@ -11,6 +11,7 @@
   (service-type
     (name 'hrdj)
     (default-value '())
+    (description "hrdj modprobe config")
     (extensions
       (list (service-extension etc-service-type
                                (const (list %hrdj-device-config)))))))

@@ -5,6 +5,7 @@
   #:use-module (gnu services shepherd)
   #:use-module (guix packages)
   #:use-module (guix gexp)
+  #:use-module (guix records)
   #:use-module (gnu packages linux)
   #:export (tlp-service-type
             tlp-configuration))
@@ -89,57 +90,57 @@ before syncing on AC.")
    (non-negative-integer 60)
    "Same as @code{max-lost-work-secs-on-ac} but on BAT mode.")
 
-  (cpu-scaling-governor-on-ac
-   (maybe-space-separated-string-list 'disabled)
-   "CPU frequency scaling governor on AC mode.  With intel_pstate
-driver, alternatives are powersave and performance.  With acpi-cpufreq driver,
-alternatives are ondemand, powersave, performance and conservative.")
+;   (cpu-scaling-governor-on-ac
+;    (maybe-space-separated-string-list 'disabled)
+;    "CPU frequency scaling governor on AC mode.  With intel_pstate
+; driver, alternatives are powersave and performance.  With acpi-cpufreq driver,
+; alternatives are ondemand, powersave, performance and conservative.")
 
-  (cpu-scaling-governor-on-bat
-   (maybe-space-separated-string-list 'disabled)
-   "Same as @code{cpu-scaling-governor-on-ac} but on BAT mode.")
+  ; (cpu-scaling-governor-on-bat
+  ;  (maybe-space-separated-string-list 'disabled)
+  ;  "Same as @code{cpu-scaling-governor-on-ac} but on BAT mode.")
 
-  (cpu-scaling-min-freq-on-ac
-   (maybe-non-negative-integer 'disabled)
-   "Set the min available frequency for the scaling governor on AC.")
+;   (cpu-scaling-min-freq-on-ac
+;    (maybe-non-negative-integer 'disabled)
+;    "Set the min available frequency for the scaling governor on AC.")
+;
+;   (cpu-scaling-max-freq-on-ac
+;    (maybe-non-negative-integer 'disabled)
+;    "Set the max available frequency for the scaling governor on AC.")
+;
+;   (cpu-scaling-min-freq-on-bat
+;    (maybe-non-negative-integer 'disabled)
+;    "Set the min available frequency for the scaling governor on BAT.")
+;
+;   (cpu-scaling-max-freq-on-bat
+;    (maybe-non-negative-integer 'disabled)
+;    "Set the max available frequency for the scaling governor on BAT.")
+;
+;   (cpu-min-perf-on-ac
+;    (maybe-non-negative-integer 'disabled)
+;    "Limit the min P-state to control the power dissipation of the CPU,
+; in AC mode.  Values are stated as a percentage of the available performance.")
+;
+;   (cpu-max-perf-on-ac
+;    (maybe-non-negative-integer 'disabled)
+;    "Limit the max P-state to control the power dissipation of the CPU,
+; in AC mode.  Values are stated as a percentage of the available performance.")
+;
+;   (cpu-min-perf-on-bat
+;    (maybe-non-negative-integer 'disabled)
+;    "Same as @code{cpu-min-perf-on-ac} on BAT mode.")
+;
+;   (cpu-max-perf-on-bat
+;    (maybe-non-negative-integer 'disabled)
+;    "Same as @code{cpu-max-perf-on-ac} on BAT mode.")
 
-  (cpu-scaling-max-freq-on-ac
-   (maybe-non-negative-integer 'disabled)
-   "Set the max available frequency for the scaling governor on AC.")
-
-  (cpu-scaling-min-freq-on-bat
-   (maybe-non-negative-integer 'disabled)
-   "Set the min available frequency for the scaling governor on BAT.")
-
-  (cpu-scaling-max-freq-on-bat
-   (maybe-non-negative-integer 'disabled)
-   "Set the max available frequency for the scaling governor on BAT.")
-
-  (cpu-min-perf-on-ac
-   (maybe-non-negative-integer 'disabled)
-   "Limit the min P-state to control the power dissipation of the CPU,
-in AC mode.  Values are stated as a percentage of the available performance.")
-
-  (cpu-max-perf-on-ac
-   (maybe-non-negative-integer 'disabled)
-   "Limit the max P-state to control the power dissipation of the CPU,
-in AC mode.  Values are stated as a percentage of the available performance.")
-
-  (cpu-min-perf-on-bat
-   (maybe-non-negative-integer 'disabled)
-   "Same as @code{cpu-min-perf-on-ac} on BAT mode.")
-
-  (cpu-max-perf-on-bat
-   (maybe-non-negative-integer 'disabled)
-   "Same as @code{cpu-max-perf-on-ac} on BAT mode.")
-
-  (cpu-boost-on-ac?
-   (maybe-boolean 'disabled)
-   "Enable CPU turbo boost feature on AC mode.")
-
-  (cpu-boost-on-bat?
-   (maybe-boolean 'disabled)
-   "Same as @code{cpu-boost-on-ac?} on BAT mode.")
+  ; (cpu-boost-on-ac?
+  ;  (maybe-boolean 'disabled)
+  ;  "Enable CPU turbo boost feature on AC mode.")
+  ;
+  ; (cpu-boost-on-bat?
+  ;  (maybe-boolean 'disabled)
+  ;  "Same as @code{cpu-boost-on-ac?} on BAT mode.")
 
   (sched-powersave-on-ac?
    (boolean #f)
@@ -154,10 +155,10 @@ used under light load conditions.")
    (boolean #f)
    "Enable Linux kernel NMI watchdog.")
 
-  (phc-controls
-   (maybe-string 'disabled)
-   "For Linux kernels with PHC patch applied, change CPU voltages.
-An example value would be @samp{\"F:V F:V F:V F:V\"}.")
+;   (phc-controls
+;    (maybe-string 'disabled)
+;    "For Linux kernels with PHC patch applied, change CPU voltages.
+; An example value would be @samp{\"F:V F:V F:V F:V\"}.")
 
   (energy-perf-policy-on-ac
    (string "performance")
@@ -180,19 +181,19 @@ performance, normal, powersave.")
    (space-separated-string-list '("128" "128"))
    "Same as @code{disk-apm-bat} but on BAT mode.")
 
-  (disk-spindown-timeout-on-ac
-   (maybe-space-separated-string-list 'disabled)
-   "Hard disk spin down timeout.  One value has to be specified for
-each declared hard disk.")
+;   (disk-spindown-timeout-on-ac
+;    (maybe-space-separated-string-list 'disabled)
+;    "Hard disk spin down timeout.  One value has to be specified for
+; each declared hard disk.")
 
-  (disk-spindown-timeout-on-bat
-   (maybe-space-separated-string-list 'disabled)
-   "Same as @code{disk-spindown-timeout-on-ac} but on BAT mode.")
+  ; (disk-spindown-timeout-on-bat
+  ;  (maybe-space-separated-string-list 'disabled)
+  ;  "Same as @code{disk-spindown-timeout-on-ac} but on BAT mode.")
 
-  (disk-iosched
-   (maybe-space-separated-string-list 'disabled)
-   "Select IO scheduler for disk devices.  One value has to be specified
-for each declared hard disk.  Example alternatives are cfq, deadline and noop.")
+;   (disk-iosched
+;    (maybe-space-separated-string-list 'disabled)
+;    "Select IO scheduler for disk devices.  One value has to be specified
+; for each declared hard disk.  Example alternatives are cfq, deadline and noop.")
 
   (sata-linkpwr-on-ac
    (string "max_performance")
@@ -203,18 +204,18 @@ min_power, medium_power, max_performance.")
    (string "min_power")
    "Same as @code{sata-linkpwr-ac} but on BAT mode.")
 
-  (sata-linkpwr-blacklist
-   (maybe-string 'disabled)
-   "Exclude specified SATA host devices for link power management.")
-
-  (ahci-runtime-pm-on-ac?
-   (maybe-on-off-boolean 'disabled)
-   "Enable Runtime Power Management for AHCI controller and disks
-on AC mode.")
-
-  (ahci-runtime-pm-on-bat?
-   (maybe-on-off-boolean 'disabled)
-   "Same as @code{ahci-runtime-pm-on-ac} on BAT mode.")
+;   (sata-linkpwr-blacklist
+;    (maybe-string 'disabled)
+;    "Exclude specified SATA host devices for link power management.")
+;
+;   (ahci-runtime-pm-on-ac?
+;    (maybe-on-off-boolean 'disabled)
+;    "Enable Runtime Power Management for AHCI controller and disks
+; on AC mode.")
+;
+;   (ahci-runtime-pm-on-bat?
+;    (maybe-on-off-boolean 'disabled)
+;    "Same as @code{ahci-runtime-pm-on-ac} on BAT mode.")
 
   (ahci-runtime-pm-timeout
    (non-negative-integer 15)
@@ -305,9 +306,9 @@ on and auto.")
    "Runtime Power Management for all PCI(e) bus devices, except
 blacklisted ones.")
 
-  (runtime-pm-blacklist
-   (maybe-space-separated-string-list 'disabled)
-   "Exclude specified PCI(e) device addresses from Runtime Power Management.")
+  ; (runtime-pm-blacklist
+  ;  (maybe-space-separated-string-list 'disabled)
+  ;  "Exclude specified PCI(e) device addresses from Runtime Power Management.")
 
   (runtime-pm-driver-blacklist
    (space-separated-string-list '("radeon" "nouveau"))
@@ -318,22 +319,22 @@ Runtime Power Management.")
    (boolean #t)
    "Enable USB autosuspend feature.")
 
-  (usb-blacklist
-   (maybe-string 'disabled)
-   "Exclude specified devices from USB autosuspend.")
+  ; (usb-blacklist
+  ;  (maybe-string 'disabled)
+  ;  "Exclude specified devices from USB autosuspend.")
 
   (usb-blacklist-wwan?
    (boolean #t)
    "Exclude WWAN devices from USB autosuspend.")
 
-  (usb-whitelist
-   (maybe-string 'disabled)
-   "Include specified devices into USB autosuspend, even if they are
-already excluded by the driver or via @code{usb-blacklist-wwan?}.")
-
-  (usb-autosuspend-disable-on-shutdown?
-   (maybe-boolean 'disabled)
-   "Enable USB autosuspend before shutdown.")
+;   (usb-whitelist
+;    (maybe-string 'disabled)
+;    "Include specified devices into USB autosuspend, even if they are
+; already excluded by the driver or via @code{usb-blacklist-wwan?}.")
+;
+;   (usb-autosuspend-disable-on-shutdown?
+;    (maybe-boolean 'disabled)
+;    "Enable USB autosuspend before shutdown.")
 
   (restore-device-state-on-startup?
    (boolean #f)

@@ -7,6 +7,7 @@
   #:use-module (gnu services mcron)
   #:use-module (gnu services shepherd)
   #:use-module (gnu system mapped-devices)
+  #:use-module (gnu packages file-systems)
   #:use-module (guix gexp)
   #:use-module (guix packages)
   #:use-module (guix records)
@@ -104,26 +105,6 @@ On Guix System, you will need to invoke the included shell scripts as @code{job}
 definitions in your @code{operating-system} declaration.")
     (license #f)))
 
-(define (file-system->shepherd-service-name file-system)
-  "Return the symbol that denotes the service mounting and unmounting
-FILE-SYSTEM."
-  (symbol-append 'file-system-
-                 (string->symbol (file-system-mount-point file-system))))
-
-(define (mapped-device->shepherd-service-name md)
-  "Return the symbol that denotes the shepherd service of MD, a <mapped-device>."
-  (symbol-append 'device-mapping-
-                 (string->symbol (string-join
-                                  (mapped-device-targets md) "-"))))
-
-(define dependency->shepherd-service-name
-  (match-lambda
-    ((? mapped-device? md)
-     (mapped-device->shepherd-service-name md))
-    ((? file-system? fs)
-     (file-system->shepherd-service-name fs))))
-
-
 (define-record-type* <zfs-configuration>
   zfs-configuration
   make-zfs-configuration
@@ -138,28 +119,11 @@ FILE-SYSTEM."
   ;; for the given kernel.
   (base-zfs-auto-snapshot     zfs-configuration-base-zfs-auto-snapshot
                               (default zfs-auto-snapshot))
-  ;; list of <mapped-device> or <file-system> objects that must be
-  ;; opened/mounted before we import any ZFS pools.
-  (dependencies               zfs-configuration-dependencies
-                              (default '()))
-  ;; #t if mountable datasets are to be mounted automatically.
-  ;; #f if not mounting.
-  ;; #t is the expected behavior on other operating systems, the
-  ;; #f is only supported for "rescue" operating systems where
-  ;; the user wants lower-level control of when to mount.
-  (auto-mount?                zfs-configuration-auto-mount?
-                              (default #t))
   ;; 'weekly for weekly scrubbing, 'monthly for monthly scrubbing, an
   ;; mcron time specification that can be given to `job`, or #f to
   ;; disable.
   (auto-scrub                 zfs-configuration-auto-scrub
                               (default 'weekly))
-  ;; #t if auto-snapshot is default (and `com.sun:auto-snapshot=false`
-  ;; disables auto-snapshot per dataset), #f if no auto-snapshotting
-  ;; is default (and `com.sun:auto-snapshot=true` enables auto-snapshot
-  ;; per dataset).
-  (auto-snapshot?             zfs-configuration-auto-snapshot?
-                              (default #t))
   ;; association list of symbol-number pairs to indicate the number
   ;; of automatic snapshots to keep for each of 'frequent, 'hourly,
   ;; 'daily, 'weekly, and 'monthly.
@@ -195,8 +159,9 @@ FILE-SYSTEM."
         (base-zfs  (zfs-configuration-base-zfs conf)))
     (package
       (inherit base-zfs)
-      (arguments (cons* #:linux kernel
-                        (package-arguments base-zfs))))))
+      (arguments
+        `(#:linux ,kernel
+          ,@(package-arguments base-zfs))))))
 
 (define (make-zfs-auto-snapshot-package conf)
   (let ((zfs                    (make-zfs-package conf))
@@ -209,93 +174,35 @@ FILE-SYSTEM."
   (let* ((zfs-package     (make-zfs-package conf))
          (zpool           (file-append zfs-package "/sbin/zpool"))
          (zfs             (file-append zfs-package "/sbin/zfs"))
-         (zvol_wait       (file-append zfs-package "/bin/zvol_wait"))
          (scheme-modules  `((srfi srfi-1)
                             (srfi srfi-34)
                             (srfi srfi-35)
                             (rnrs io ports)
                             ,@%default-modules)))
-    (define zfs-scan
-      (shepherd-service
-        (provision '(zfs-scan))
+
+      (list (shepherd-service
+        (provision '(zfs-mount))
         (requirement `(root-file-system
                        kernel-module-loader
-                       udev
-                       ,@(map dependency->shepherd-service-name
-                              (zfs-configuration-dependencies conf))))
+                       udev))
         (documentation "Scans for and imports ZFS pools.")
         (modules scheme-modules)
         (start #~(lambda _
-                   (guard (c ((message-condition? c)
-                              (format (current-error-port)
-                                      "zfs: error importing pools: ~s~%"
-                                      (condition-message c))
-                              #f))
-                     ; TODO: optionally use a cachefile.
-                     (invoke #$zpool "import" "-a" "-N"))))
-        ;; Why not one-shot?  Because we don't really want to rescan
-        ;; this each time a requiring process is restarted, as scanning
-        ;; can take a long time and a lot of I/O.
-        (stop #~(const #f))))
-
-    (define device-mapping-zvol/*
-      (shepherd-service
-        (provision '(device-mapping-zvol/*))
-        (requirement '(zfs-scan))
-        (documentation "Waits for all ZFS ZVOLs to be opened.")
-        (modules scheme-modules)
-        (start #~(lambda _
-                   (guard (c ((message-condition? c)
-                              (format (current-error-port)
-                                      "zfs: error opening zvols: ~s~%"
-                                      (condition-message c))
-                              #f))
-                     (invoke #$zvol_wait))))
-        (stop #~(const #f))))
-
-    (define zfs-auto-mount
-      (shepherd-service
-        (provision '(zfs-auto-mount))
-        (requirement '(zfs-scan))
-        (documentation "Mounts all non-legacy mounted ZFS filesystems.")
-        (modules scheme-modules)
-        (start #~(lambda _
-                   (guard (c ((message-condition? c)
-                              (format (current-error-port)
-                                      "zfs: error mounting file systems: ~s~%"
-                                      (condition-message c))
-                              #f))
-                     ;; Output to current-error-port, otherwise the
-                     ;; user will not see any prompts for passwords
-                     ;; of encrypted datasets.
-                     ;; XXX Maybe better to explicitly open /dev/console ?
-                     (with-output-to-port (current-error-port)
+                    (with-output-to-file "/dev/console"
                        (lambda ()
-                         (invoke #$zfs "mount" "-a" "-l"))))))
+                        (with-input-from-file "/dev/console"
+                           (lambda ()
+                             (invoke #$zpool "import" "-a" "-N")
+                             (usleep 100)
+                             (invoke #$zfs "mount" "-a" "-l")))))))
         (stop #~(lambda _
-                  ;; Make sure that Shepherd does not have a CWD that
-                  ;; is a mounted ZFS filesystem, which would prevent
-                  ;; unmounting.
                   (chdir "/")
-                  (invoke #$zfs "unmount" "-a" "-f")))))
-
-    `(,zfs-scan
-      ,device-mapping-zvol/*
-      ,@(if (zfs-configuration-auto-mount? conf)
-            `(,zfs-auto-mount)
-            '()))))
-
-(define (zfs-user-processes conf)
-  (if (zfs-configuration-auto-mount? conf)
-      '(zfs-auto-mount)
-      '(zfs-scan)))
+                  (invoke #$zfs "unmount" "-a" "-f")))))))
 
 (define (zfs-mcron-auto-snapshot-jobs conf)
   (let* ((user-auto-snapshot-keep      (zfs-configuration-auto-snapshot-keep conf))
-         ;; assoc-ref has earlier entries overriding later ones.
          (auto-snapshot-keep           (append user-auto-snapshot-keep
                                                %default-auto-snapshot-keep))
-         (auto-snapshot?               (zfs-configuration-auto-snapshot? conf))
          (zfs-auto-snapshot-package    (make-zfs-auto-snapshot-package conf))
          (zfs-auto-snapshot            (file-append zfs-auto-snapshot-package
                                                     "/sbin/zfs-auto-snapshot")))
@@ -329,35 +236,24 @@ FILE-SYSTEM."
                             "|| exit 0")))))
 
 (define (zfs-mcron-jobs conf)
-  (append (zfs-mcron-auto-snapshot-jobs conf)
-          (if (zfs-configuration-auto-scrub conf)
-              (zfs-mcron-auto-scrub-jobs conf)
-              '())))
+  `(,@(zfs-mcron-auto-snapshot-jobs conf)
+    ,@(zfs-mcron-auto-scrub-jobs conf)))
 
 (define zfs-service-type
   (service-type
     (name 'zfs)
     (extensions
-      (list 
-        ;; Load it.
+      (list
         (service-extension kernel-module-loader-service-type
                            (const '("zfs")))
-        ;; Make sure ZFS pools and datasets are mounted at
-        ;; boot.
         (service-extension shepherd-root-service-type
                            zfs-shepherd-services)
-        ;; Make sure user-processes don't start until
-        ;; after ZFS does.
         (service-extension user-processes-service-type
-                           zfs-user-processes)
-        ;; Install automated scrubbing and snapshotting.
+                           (const '(zfs-mount)))
         (service-extension mcron-service-type
                            zfs-mcron-jobs)
-        ;; Install ZFS management commands in the system
-        ;; profile.
         (service-extension profile-service-type
                            (compose list make-zfs-package))
-        ;; Install ZFS udev rules.
         (service-extension udev-service-type
                            (compose list make-zfs-package))))
     (description "Installs ZFS, an advanced filesystem and volume manager.")))
@@ -365,5 +261,6 @@ FILE-SYSTEM."
 (define zfs-with-vup-kernel
   (package
     (inherit zfs)
-    (arguments (cons* #:linux linux-nonfree/extra_config
-                      (package-arguments zfs)))))
+    (arguments
+      `(#:linux ,linux-nonfree/extra_config
+                      ,@(package-arguments zfs)))))

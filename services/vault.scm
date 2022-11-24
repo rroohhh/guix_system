@@ -2,6 +2,7 @@
   #:use-module (gnu services)
   #:use-module (gnu services shepherd)
   #:use-module (gnu system shadow)
+  #:use-module (gnu packages tls)
   #:use-module (vup go-xyz)
   #:use-module (misc vault)
   #:use-module (guix records)
@@ -126,24 +127,27 @@
 
 (define (vault-unseal-shepherd-service config)
   "Return a <shepherd-service> for unsealing vault with CONFIG."
-  (list (shepherd-service
-         (documentation "vault unsealing service")
-         (requirement '(vault))
-         (provision '(vault-unseal))
-         (start
-          (with-extensions (list (module-ref (resolve-interface '(gnu packages tls)) 'gnutls)
-                                 (module-ref (resolve-interface '(gnu packages guile)) 'guile-json-4))
-            (with-imported-modules (source-module-closure '((misc vault)) #:select? (lambda* (name) (if (guix-module-name? name) #t (match name (('gnutls) #t) (('json _) #t) (('misc _) #t) (_ #f)))))
-              #~(lambda args
-                  (let* ((keys-file (open-input-file #$(vault-unseal-configuration-unsealing-keys-file config)))
-                         (vault-connection #$(vault-unseal-configuration-vault-connection config)))
-                    (vault-unseal vault-connection (read-line keys-file))
-                    (vault-unseal vault-connection (read-line keys-file))
-                    (vault-unseal vault-connection (read-line keys-file)))))))
-         (stop #~(lambda args
-                   (vault-seal #$(vault-unseal-configuration-vault-connection config))))
-         (modules `((misc vault) (ice-9 rdelim) (gnutls)
-                    ,@%default-modules)))))
+    (with-extensions (list guile-gnutls ;; (module-ref (resolve-interface '(gnu packages tls)) 'gnutls)
+                           (module-ref (resolve-interface '(gnu packages guile)) 'guile-json-4))
+     (with-imported-modules (source-module-closure '((misc vault)) #:select? (lambda* (name) (if (guix-module-name? name) #t (match name (('gnutls) #t) (('json _) #t) (('misc _) #t) (_ #f)))))
+         (define start
+            #~(lambda args
+                         (let* ((keys-file (open-input-file #$(vault-unseal-configuration-unsealing-keys-file config)))
+                                (vault-connection #$(vault-unseal-configuration-vault-connection config)))
+                           (vault-unseal vault-connection (read-line keys-file))
+                           (vault-unseal vault-connection (read-line keys-file))
+                           (vault-unseal vault-connection (read-line keys-file)))))
+         (define stop
+           #~(lambda args
+                          (vault-seal #$(vault-unseal-configuration-vault-connection config))))
+         (list (shepherd-service
+                (documentation "vault unsealing service")
+                (requirement '(vault))
+                (provision '(vault-unseal))
+                (start start)
+                (stop stop)
+                (modules `((misc vault) (ice-9 rdelim) (gnutls)
+                           ,@%default-modules)))))))
 
 (define vault-unseal-service-type
   (service-type (name 'vault-unseal)
@@ -160,7 +164,7 @@
     (target secret)
     (generator
      (with-extensions
-      (list (module-ref (resolve-interface '(gnu packages tls)) 'gnutls)
+      (list guile-gnutls ;; (module-ref (resolve-interface '(gnu packages tls)) 'gnutls)
             (module-ref (resolve-interface '(gnu packages guile)) 'guile-json-4))
       (with-imported-modules
        (source-module-closure

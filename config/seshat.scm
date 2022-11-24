@@ -7,6 +7,7 @@
   #:use-module (services caddy)
   #:use-module (services quassel)
   #:use-module (services boulderhaus)
+  #:use-module (services vaultwarden)
   #:use-module (services rtsp-simple-server)
   #:use-module (gnu)
   #:use-module (gnu machine)
@@ -14,7 +15,9 @@
   #:use-module (gnu system file-systems)
   #:use-module (gnu services networking)
   #:use-module (gnu services databases)
+  #:use-module (gnu services docker)
   #:use-module (gnu services ssh)
+  #:use-module (gnu services mail)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages admin)
@@ -57,8 +60,10 @@
          (simple-configs '(("influx.<host>" "mel" "8086")
                            ("ci.<host>" "mel" "8080")
                            ("stream.<host>" "seshat" "8888")
+                           ("vw.<host>" "seshat" "21369")
                            ("files.<host>" "mel" "8000")
                            ("ada.<host>" "ada" "8000")
+                           ("sg.<host>" "seshat" "3080")
                            ("git.froheiyd.de" "rofydi" "3000"))))
     (with-imported-modules (source-module-closure* '((config network))) ; TODO(robin): write a better version of source-module-closure to use here
         #~(begin
@@ -72,13 +77,21 @@
                      (format #f "~a { reverse_proxy * ~a:~a }" (car config) (address-of (cadr config) #$host-name) (caddr config)))
                    '#$simple-configs)
                 "<host> { reverse_proxy /scrabble localhost:48443 }" ;; scrabble
+                "caldav.<host> {
+reverse_proxy * localhost:5232 {
+header_up X-Remote-User robin
+}
+basicauth * {
+robin JDJhJDE0JFNNN1hmY1VmMkdPMS5oSndiVVpkQ09vMWtnRVh1ZlZpRWhqLjZQOG9OVXBoZ2FVbXouczVT
+}
+}" ;; radicale
                 ,(string-append "vault.<host> {
 reverse_proxy * https://" (address-of "mel" #$host-name) ":8200 {
   transport http {
     tls_insecure_skip_verify
   }
 }
-}") ;; scrabble
+}")
                 ,(string-append "bh.<host> {
 root * " #$boulderhaus-booking-webui "
 reverse_proxy /api/* localhost:5558
@@ -89,7 +102,14 @@ log {
   level debug
 }
 
-} "))
+}
+
+f.<host> {
+  root * /srv/
+  file_server browse
+}
+
+"))
 
               ;; scrabble
               "\n")
@@ -116,7 +136,8 @@ log {
 ")
 
 (define extra-users
-  `(("anuejn" "users" ("wheel" "netdev" "audio" "video" "kvm")"data/anuejn.pub")
+  `(("anuejn" "users" ("wheel" "netdev" "audio" "video" "kvm") "data/anuejn.pub")
+    ("dirk" "users" ("wheel" "netdev" "audio" "video" "kvm") "data/dirk.pub")
     ("tpw_rules" "users" () "data/tpw_rules.pub" ,(file-append shadow "/sbin/nologin"))))
 
 (define rtsp-simple-server-config
@@ -366,7 +387,7 @@ paths:
 
    (bootloader (bootloader-configuration
                 (bootloader grub-bootloader)
-                (target "/dev/sda")
+                (targets '("/dev/sda"))
                 (keyboard-layout (operating-system-keyboard-layout base-system-config))))
 
    (file-systems
@@ -382,17 +403,35 @@ paths:
        (type "ext4")))
      %base-file-systems))
 
-   (services `(,(static-networking-service "eth0" "167.86.67.237/24"
-                                           #:gateway "167.86.67.1"
-                                           #:name-servers '("213.136.95.10" "213.136.95.11" "1.1.1.1" "1.0.0.1"))
+   (services `(,(service static-networking-service-type
+                         (list
+                           (static-networking
+                             (addresses
+                               (list (network-address
+                                       (device "eth0")
+                                       (value "167.86.67.237/24"))))
+                             (routes
+                               (list (network-route
+                                       (destination "default")
+                                       (gateway "167.86.67.1"))))
+                             (name-servers '("213.136.95.10" "213.136.95.11" "1.1.1.1" "1.0.0.1")))))
+               ,(service iptables-service-type
+                         (iptables-configuration
+                          (ipv4-rules
+                           (plain-file "iptables.rules" "
+-t nat -A PREROUTING -p tcp -i wg0 --dport 2222 -j DNAT --to-destination 192.168.3.3:2222
+-t nat -A PREROUTING -p tcp -i wg0 --dport 22222 -j DNAT --to-destination 192.168.3.3:22
+
+-t nat -A POSTROUTING -p tcp --match multiport --dports 22,2222 -d 192.168.3.3 -j SNAT --to-source 192.168.3.1
+"))))
                ,(service rtsp-simple-server-service-type
-                         (rtsp-simple-server-configuration
-                          (config rtsp-simple-server-config)))
+                                    (rtsp-simple-server-configuration
+                                     (config rtsp-simple-server-config)))
                ,(service bhbooking-service-type)
-               ,(service bhscraping-service-type
-                         (bhscraping-configuration
-                          (influxdb-host (string-append "http://" (address-of "mel" host-name) ":8086"))
-                          (influxdb-token-file "/secrets/bhscraping_influxdb_token")))
+;               ,(service bhscraping-service-type
+;                         (bhscraping-configuration
+;                          (influxdb-host (string-append "http://" (address-of "mel" host-name) ":8086"))
+;                          (influxdb-token-file "/secrets/bhscraping_influxdb_token")))
                ,(service postgresql-service-type
                          (postgresql-configuration
                           (postgresql postgresql-13)))
@@ -408,37 +447,55 @@ paths:
                                  (postgresql-role
                                   (name "quasselcore")
                                   (create-database? #t))))
-               ,(service quassel-service-type)
-               ,(service caddy-service-type
-                         (caddy-configuration
-                          (config-blocks (list (caddy-configs host-name)))))
-               ,(service scrabble-service-type)
-               ,(service telegraf-service-type
-                         (telegraf-configuration
-                          (influxdb-address (string-append "http://" (address-of "mel" host-name) ":8086"))
-                          (influxdb-token-file "/secrets/seshat_telegraf_token") ; TODO(robin): use vault??
-                          (influxdb-bucket "monitoring")
-                          (influxdb-orga "infra")
-                          (config (list
-                                   %telegraf-default-config
-                                   extra-telegraf-config))))
-               ,@(networking-for host-name)
-               ,@(modify-services
-                  base-services
-                  (openssh-service-type
-                   config => (openssh-configuration
-                              (inherit config)
-                              (authorized-keys
-                               (append
-                                (map (lambda (user)
-                                       `(,(car user) ,(local-file (cadddr user)))) extra-users)
-                                (map
-                                 (lambda (key-config)
-                                   (if (string=? (car key-config) "root")
-                                       (append key-config `(,(local-file "../data/mel-robin.pub")))
-                                       key-config))
-                                 ssh-default-authorized-keys))))))))))
-                                 
+                ,(service docker-service-type)
+                ,(service quassel-service-type)
+                ,(service radicale-service-type
+                          (radicale-configuration
+                           (config-file
+                            (plain-file "radicale.conf" "
+[server]
+hosts = localhost:5232
+
+[auth]
+type = http_x_remote_user
+"))))
+                            
+                 ,(service caddy-service-type
+                           (caddy-configuration
+                            (config-blocks (list (caddy-configs host-name)))))
+                 ,(service scrabble-service-type)
+                 ,(service telegraf-service-type
+                           (telegraf-configuration
+                            (influxdb-address (string-append "http://" (address-of "mel" host-name) ":8086"))
+                            (influxdb-token-file "/secrets/seshat_telegraf_token") ; TODO(robin): use vault??
+                            (influxdb-bucket "monitoring")
+                            (influxdb-orga "infra")
+                            (config (list
+                                     %telegraf-default-config
+                                     extra-telegraf-config))))
+                 ,(service vaultwarden-service-type
+                           (vaultwarden-configuration
+                             (database-url "/var/vaultwarden/db.sqlite3")
+                             (admin-token-file "/secrets/vaultwarden_admin_token")
+                             (port 21369)
+                             (domain "https://vw.coroot.de")))
+                 ,@(networking-for host-name)
+                 ,@(modify-services
+                    base-services
+                    (openssh-service-type
+                     config => (openssh-configuration
+                                (inherit config)
+                                (authorized-keys
+                                 (append
+                                  (map (lambda (user)
+                                         `(,(car user) ,(local-file (cadddr user)))) extra-users)
+                                  (map
+                                   (lambda (key-config)
+                                     (if (string=? (car key-config) "root")
+                                         (append key-config `(,(local-file "../data/mel-robin.pub")))
+                                         key-config))
+                                   ssh-default-authorized-keys))))))))))
+
 (list (machine
        (operating-system seshat-system-config)
        (environment managed-host-environment-type)

@@ -68,13 +68,16 @@
 (map! :v ";" 'comment-dwim)
 
 (after! evil
-  (setq evil-want-minibuffer nil)
-  (setq evil-want-C-w-delete t)
-  (setq evil-want-C-u-scroll t)
-  (setq evil-cross-lines t)
-  (setq evil-want-fine-undo t)
+  (setq! evil-want-minibuffer nil)
+  (setq! evil-want-C-w-delete t)
+  (setq! evil-want-C-u-scroll t)
+  (setq! evil-cross-lines t)
+  (setq! evil-want-fine-undo t)
+  (setq! evil-symbol-word-search t)
+  (evil-set-undo-system 'undo-redo)
   (add-hook 'evil-insert-state-exit-hook
             (lambda () (unless (null evil-repeat-ring) (ignore-errors (if buffer-file-name (save-buffer))))))
+  (map! :n "m" 'evil-ex-search-next)
   (map! :i "C-e" 'end-of-line)
   (map! :i "C-h" 'evil-delete-backward-char-and-join)
   (map! :i "C-u" 'evil-delete-line))
@@ -104,10 +107,10 @@
   (beacon-mode 1))
 
 
-(after! ivy
-  (setq! ivy-extra-directories '("../"))
-  (setq! +ivy-buffer-preview t)
-  (setq! counsel-find-file-ignore-regexp 'nil))
+;; (after! ivy
+;;   (setq! ivy-extra-directories '("../"))
+;;   (setq! +ivy-buffer-preview t)
+;;   (setq! counsel-find-file-ignore-regexp 'nil))
 
 (use-package! evil-goggles
   :init
@@ -146,10 +149,58 @@
       message-sendmail-envelope-from 'header
       mail-envelope-from 'header)
 
-(message "%s" gc-cons-threshold)
-
 (defadvice lsp-format-buffer (before disable-gc activate) (setq gc-cons-threshold most-negative-fixnum))
 (defadvice lsp-format-buffer (after enable-gc activate) (run-at-time 1 nil lambda () (setq gc-cons-threshold doom-gc-cons-threshold)))
+
+(after! lsp-mode
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-tramp-connection '("singularity" "exec" "--app" "dls" "/containers/stable/latest" "clangd"))
+                    :major-modes '(c++-mode c-mode)
+                    :remote? t
+                    :server-id 'clangd-remote))
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-tramp-connection '("singularity" "exec" "--app" "dls" "/containers/stable/latest" "pylsp"))
+                    :major-modes '(python-mode)
+                    :remote? t
+                    :server-id 'pyls-remote)))
+
+(after! org
+  (setcdr (assoc "\\.pdf\\'" org-file-apps) "evince %s"))
+
+
+;(after! evil-org
+;  (map! :prefix "g" :map 'evil-org-mode-map "s h" nil))
+(setq! debug-on-message "Key sequence.*")
+
+(setq +tree-sitter-hl-enabled-modes t)
+
+
+(after! vertico
+  (map! :map vertico-map "/" 'vertico-directory-enter))
+
+(use-package! org-caldav
+  :init
+  (setq! org-caldav-url "https://caldav.coroot.de/robin"
+         org-caldav-calendar-id "abd56a4b-e0d9-3335-b894-8607e21f0bb3"
+         org-caldav-inbox "/home/robin/org/caldav-inbox.org"
+         org-caldav-files '("/home/robin/org/meetings.org")
+         org-icalendar-timezone "Europe/Berlin"
+         org-icalendar-use-scheduled '('event-if-todo 'event-if-not-todo)
+         org-icalendar-with-timestamps t
+         org-icalendar-include-sexps t
+         org-caldav-debug-level 1
+         org-caldav-autosync-idle-seconds 10)
+  (org-caldav-autosync-mode 1))
+(setq tramp-verbose 8)
+(connection-local-set-profile-variables 'remote-with-singularity-dls
+                                        '((tramp-remote-path . (tramp-own-remote-path tramp-default-remote-path))))
+(connection-local-set-profiles
+ '(:application tramp :machine "hel") 'remote-with-singularity-dls)
+
+
+(setq! tramp-connection-properties
+       (list  (list (regexp-quote "/ssh:uranus:")
+                    "tmpdir" '("/hyperfast/home/rheinema/tmp"))))
 
 (set-face-attribute 'default nil
                     :family "Hack"
@@ -159,37 +210,4 @@
 
 (set-fontset-font t nil (font-spec :size 20 :name "Noto Sans"))
 
-;; (set-ligatures! '
-;;     ;; Functional
-;;     :lambda        "lambda keyword"
-;;     :def           "function keyword"
-;;     :composition   "composition"
-;;     :map           "map/dictionary keyword"
-;;     ;; Types
-;;     :null          "null type"
-;;     :true          "true keyword"
-;;     :false         "false keyword"
-;;     :int           "int keyword"
-;;     :float         "float keyword"
-;;     :str           "string keyword"
-;;     :bool          "boolean keywork"
-;;     :list          "list keyword"
-;;     ;; Flow
-;;     :not           "not operator")
-
-;; Here are some additional functions/macros that could help you configure Doom:
-;;
-;; - `load!' for loading external *.el files relative to this one
-;; - `use-package!' for configuring packages
-;; - `after!' for running code after a package has loaded
-;; - `add-load-path!' for adding directories to the `load-path', relative to
-;;   this file. Emacs searches the `load-path' when you load packages with
-;;   `require' or `use-package'.
-;; - `map!' for binding new keys
-;;
-;; To get information about any of these functions/macros, move the cursor over
-;; the highlighted symbol at press 'K' (non-evil users must press 'C-c c k').
-;; This will open documentation for it, including demos of how they are used.
-;;
-;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
-;; they are implemented.
+(setq auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc"))

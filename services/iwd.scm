@@ -11,7 +11,7 @@
   #:use-module (gnu packages tls)
   #:use-module ((guix licenses) #:prefix license:)
   #:export (connman-service-type
-			connman-configuration))
+            connman-configuration))
 
 (define-public connman-with-iwd
   (package
@@ -130,14 +130,14 @@ maximum extent possible.")
 (define-public (iwd-shepherd-service _)
   "Return a shepherd service for iwd"
   (list (shepherd-service
-		 (documentation "Run iwd")
-		 (provision '(iwd))
-		 (requirement
-		  `(user-processes dbus-system loopback))
-		 (start #~(make-forkexec-constructor
-				   (list (string-append #$iwd
-										"/libexec/iwd"))))
-		 (stop #~(make-kill-destructor)))))
+         (documentation "Run iwd")
+         (provision '(iwd))
+         (requirement
+          `(user-processes dbus-system loopback))
+         (start #~(make-forkexec-constructor
+                   (list (string-append #$iwd
+                                        "/libexec/iwd"))))
+         (stop #~(make-kill-destructor)))))
 
 
 (define-public iwd-service-type
@@ -146,85 +146,10 @@ maximum extent possible.")
                   (extensions
                    (list (service-extension shepherd-root-service-type
                                             iwd-shepherd-service)
-;                         (service-extension polkit-service-type
-;                                            connman-package)
                          (service-extension dbus-root-service-type
                                             iwd-package)
-                         ;; Add connman to the system profile.
                          (service-extension profile-service-type
                                             iwd-package)))
                   (default-value '())
                   (description
-                   "Run @url{https://01.org/iwd,iwd},
-a wpa-supplicant replacemennt."))))
-
-
-(define-record-type* <connman-configuration>
-  connman-configuration make-connman-configuration
-  connman-configuration?
-  (connman      connman-configuration-connman
-                (default connman))
-  (disable-vpn? connman-configuration-disable-vpn?
-                (default #f))
-  (use-iwd? connman-configuration-use-iwd?
-                (default #f)))
-
-(define-public (connman-activation config)
-  (let ((disable-vpn? (connman-configuration-disable-vpn? config)))
-    (with-imported-modules '((guix build utils))
-      #~(begin
-          (use-modules (guix build utils))
-          (mkdir-p "/var/lib/connman/")
-          (unless #$disable-vpn?
-            (mkdir-p "/var/lib/connman-vpn/"))))))
-
-
-
-(define-public (connman-shepherd-service config)
-  "Return a shepherd service for Connman"
-  (and
-   (connman-configuration? config)
-   (let* ((connman      (connman-configuration-connman config))
-         (disable-vpn? (connman-configuration-disable-vpn? config))
-         (use-iwd? (connman-configuration-use-iwd? config))
-		 (wifi-agent (if use-iwd? 'iwd 'wpa-supplicant)))
-     (list (shepherd-service
-            (documentation "Run Connman")
-            (provision '(networking))
-            (requirement
-             `(user-processes dbus-system loopback ,wifi-agent)) ; maybe add wpa-supplicant again
-            (start #~(make-forkexec-constructor
-                      (list (string-append #$connman
-                                           "/sbin/connmand")
-                            "-n" "-r"
-                            #$@(if disable-vpn? '("--noplugin=vpn") '())
-                            #$@(if use-iwd? '("--wifi=iwd_agent") '()))
-
-                      ;; As connman(8) notes, when passing '-n', connman
-                      ;; "directs log output to the controlling terminal in
-                      ;; addition to syslog."  Redirect stdout and stderr
-                      ;; to avoid spamming the console (XXX: for some reason
-                      ;; redirecting to /dev/null doesn't work.)
-                      #:log-file "/var/log/connman.log"))
-            (stop #~(make-kill-destructor)))))))
-
-
-(define connman-service-type
-  (let ((connman-package (compose list connman-configuration-connman)))
-    (service-type (name 'connman)
-                  (extensions
-                   (list (service-extension shepherd-root-service-type
-                                            connman-shepherd-service)
-                         (service-extension polkit-service-type
-                                            connman-package)
-                         (service-extension dbus-root-service-type
-                                            connman-package)
-                         (service-extension activation-service-type
-                                            connman-activation)
-                         ;; Add connman to the system profile.
-                         (service-extension profile-service-type
-                                            connman-package)))
-                  (default-value (connman-configuration))
-                  (description
-                   "Run @url{https://01.org/connman,Connman},
-a network connection manager."))))
+                   "Run @url{https://01.org/iwd,iwd}, a wpa-supplicant replacemennt."))))

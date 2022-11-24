@@ -8,6 +8,11 @@
 
 ;; To install SOME-PACKAGE from MELPA, ELPA or emacsmirror:
 (package! beacon)
+(package! doom-snippets :ignore t)
+(package! evil-easymotion :ignore t)
+(package! yasnippet-snippets)
+(package! org-caldav
+  :recipe (:host github :repo "rroohhh/org-caldav" :branch "master"))
 
 ;; To install a package directly from a remote git repo, you must specify a
 ;; `:recipe'. You'll find documentation on what `:recipe' accepts here:

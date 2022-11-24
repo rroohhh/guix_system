@@ -34,7 +34,6 @@
       (file-system
        (mount-point "/tmp")
        (device "none")
-       (title 'device)
        (type "tmpfs"))
       (file-system
        (device (file-system-label "main_ssd"))

@@ -10,15 +10,19 @@
   #:use-module (services hrdj)
   #:use-module (misc util)
   #:use-module (misc trackpoint-config)
-  #:use-module (gnu packages mail)
+  #:use-module (misc titan-key)
   #:use-module (gnu)
   #:use-module (gnu services)
   #:use-module (gnu services admin)
   #:use-module (gnu services mcron)
   #:use-module (gnu services linux)
   #:use-module (gnu services networking)
+  #:use-module (gnu system setuid)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages gnome)
+  #:use-module (gnu packages file-systems)
+  #:use-module (gnu packages mail)
+  #:use-module (gnu packages wm)
   #:use-module (vup hwinfo)
   #:use-module (vup linux))
 
@@ -37,7 +41,7 @@
      (host-name "ada")
 
      ;; fuck mitigations, who cares
-     (kernel-arguments '("modprobe.blacklist=pcspkr" "mitigations=off"))
+     (kernel-arguments '("modprobe.blacklist=pcspkr" "tsc=reliable" "mitigations=off" "noibrs" "noibpb" "nopti" "nospectre_v2" "nospectre_v1" "l1tf=off" "nospec_store_bypass_disable" "no_stf_barrier" "mds=off" "tsx=on" "tsx_async_abort=off"))
      (kernel-loadable-modules (append
                                 (list
                                  v4l2loopback-linux-module
@@ -45,7 +49,9 @@
                                 (operating-system-kernel-loadable-modules base-desktop-system-config)))
 
      (setuid-programs (append (list
-                                (file-append hwinfo/amd "/bin/hwinfo")) %setuid-programs))
+                               (file-like->setuid-program (file-append hwinfo/amd "/bin/hwinfo"))
+                               (file-like->setuid-program (file-append swaylock "/bin/swaylock")))
+                              %setuid-programs))
 
      (file-systems
       (append
@@ -53,7 +59,6 @@
         (file-system
           (mount-point "/tmp")
           (device "none")
-          (title 'device)
           (type "tmpfs"))
         (file-system
           (device (uuid "67792584-3957-400f-a732-71afcdb23eb1"))
@@ -75,16 +80,14 @@
                                             (rules
                                               (append
                                                (udev-configuration-rules config)
-                                               (list trackpoint-udev-config))))))
+                                               (list trackpoint-udev-config titan-key-udev-config))))))
 
        (networking-for host-name)
 
        (list
         (service zfs-service-type
                   (zfs-configuration
-                   (kernel linux-nonfree/extra_config)
-                   (auto-scrub #f)
-                   (auto-snapshot? #f)))
+                   (kernel linux-nonfree/extra_config)))
 
         (bluetooth-service)
 
@@ -127,3 +130,5 @@
                    (dns "dnsmasq")
                    (vpn-plugins (list network-manager-openvpn network-manager-openconnect network-manager-vpnc))))
         (service wpa-supplicant-service-type))))))
+        
+     

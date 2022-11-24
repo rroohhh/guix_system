@@ -9,6 +9,8 @@
   #:use-module (vup ip_addr)
   #:use-module (vup tmp)
   #:use-module (vup rust-apps)
+  #:use-module (vup misc)
+  #:use-module (vup atuin)
   #:use-module (guix gexp)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages rust-apps)
@@ -261,16 +263,15 @@ key_bindings:
               (make-channel-introduction
                "c23d64f1b8cc086659f8781b27ab6c7314c5cca5"
                (openpgp-fingerprint
-                "50F3 3E2E 5B0C 3D90 0424  ABE8 9BDC F497 A4BB CC7F")))))))
-      
-       ;; (channel
-       ;;   (name 'nonguix)
-       ;;   (url "https://gitlab.com/nonguix/nonguix")
-       ;;   (introduction
-       ;;    (make-channel-introduction
-       ;;     "897c1a470da759236cc11798f4e0a5f7d4d59fbc"
-       ;;     (openpgp-fingerprint
-       ;;      "2A39 3FFF 68F4 EF7A 3D29  12AF 6F51 20A0 22FB B2D5"))))
+                "50F3 3E2E 5B0C 3D90 0424  ABE8 9BDC F497 A4BB CC7F"))))
+           (channel
+             (name 'nonguix)
+             (url "https://gitlab.com/nonguix/nonguix")
+             (introduction
+              (make-channel-introduction
+               "897c1a470da759236cc11798f4e0a5f7d4d59fbc"
+               (openpgp-fingerprint
+                "2A39 3FFF 68F4 EF7A 3D29  12AF 6F51 20A0 22FB B2D5")))))))
 
 
 (define-public ideavim-config
@@ -452,7 +453,7 @@ seat * xcursor_theme Adwaita"))
         (smart-borders #t)
         (key-bindings
           `(((,mod "f") "fullscreen toggle")
-            ((,mod "Return") ("exec " ,(file-append alacritty-fixed "/bin/alacritty")))
+            ((,mod "Return") ("exec " ,(file-append alacritty "/bin/alacritty")))
             ((,mod "Shift" "q") "kill")
             ((,mod "d") ("exec " ,(file-append rofi "/bin/rofi") " -show run"))
             ((,mod ,left) "focus left")
@@ -505,6 +506,10 @@ lib \"" pipewire-0.3 "/lib/alsa-lib/libasound_module_pcm_pipewire.so\"
 query = is:unread
 recency_interval_hours = 0
 hidden_tags = inbox unread attachment replied sent encrypted signed"))
+
+(define-public bazel-settings
+  (plain-file "bazelrc" "build --sandbox_block_path=/home/robin/.guix-home
+"))
 
 (define-public gtk3-settings
   (plain-file "settings.ini" "[Settings]
@@ -911,7 +916,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
          (make-service
            #:docstring "ra-multiplex-server"
            #:provides '(ra-multiplex)
-           #:start (make-forkexec-constructor (list #$(file-append rust-ra-multiplex-0.1 "/bin/ra-multiplex-server")))
+           #:start (make-forkexec-constructor (list #$(file-append ra-multiplex "/bin/ra-multiplex-server")))
            #:stop (make-kill-destructor)))
 
        ;; (define (i3-service display)
@@ -942,7 +947,7 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
           (make-simple-forkexec-display-service display
             #:docstring "Telegram"
             #:provides '(telegram)
-            #:command `(,#$(file-append telegram-desktop "/bin/telegram-desktop"))))
+            #:command `(,#$(file-append telegram-desktop-fixed "/bin/telegram-desktop"))))
 
        (define (pavucontrol-service display)
           (make-simple-forkexec-display-service display
@@ -1012,10 +1017,24 @@ Use 'vt1' for display ':0', vt2 for ':1', etc."
   (mixed-text-file "user-shepherd-setup"
    "[[ -z $(pgrep -U $(id --user) '^shepherd$') ]] && " (file-append shepherd "/bin/shepherd") " -l ~/log/shepherd.log -c " shepherd-config " >> ~/log/shepherd.log 2>&1"))
 
+;; (define-public cargo-sccache-setup
+;;   (mixed-text-file "cargo-sccache-setup"
+;;                    "[build]
+;; # rustc-wrapper = \"" (file-append rust-sccache-0.2 "/bin/sccache")"\"
+;; rustflags = ['-C', 'link-arg=-fuse-ld=lld']
+;; "))
+
 (define-public cargo-sccache-setup
   (mixed-text-file "cargo-sccache-setup"
                    "[build]
-rustc-wrapper = \"" (file-append rust-sccache-0.2 "/bin/sccache")"\"
+rustflags = ['-C', 'link-arg=-fuse-ld=lld']
+"))
+
+(define-public atuin-config
+  (mixed-text-file "atuin-config"
+                   "style = 'compact'
+update_check = false
+search_mode = 'fuzzy'
 "))
 
 (define-public ra-multiplex-config
@@ -1024,23 +1043,25 @@ rustc-wrapper = \"" (file-append rust-sccache-0.2 "/bin/sccache")"\"
 
 (define-public basic-program-configs
   (list
-   `("config/rofi/config.rasi" ,rofi-config)
-   `("config/guix/channels.scm" ,guix-config)
-   `("config/mako/config" ,mako-config)
-   `("config/wofi/config" ,wofi-config)
-   `("config/i3blocks/config" ,i3blocks-config)
-   `("config/gtk-3.0/settings.ini" ,gtk3-settings)
-   `("config/ra-multiplex/config.toml" ,ra-multiplex-config)
-   `("cargo/config.toml" ,cargo-sccache-setup)
-   `("inputrc" ,inputrc)
-   `("asoundrc" ,asoundrc)
-   `("config/notifymuch/notifymuch.cfg" ,notifymuch-config)
-   `("tmux.conf" ,tmux-config)
-   `("ideavimrc" ,ideavim-config)
-   `("config/alacritty/alacritty.yml" ,alacritty-config)
-   `("config/sway" ,(i3-home sway-config))
-   `("gitconfig" ,gitconfig)
-   `("terminfo" ,emacs-terminfo)))
+   `(".config/rofi/config.rasi" ,rofi-config)
+   `(".config/guix/channels.scm" ,guix-config)
+   `(".config/mako/config" ,mako-config)
+   `(".config/wofi/config" ,wofi-config)
+   `(".config/i3blocks/config" ,i3blocks-config)
+   `(".config/gtk-3.0/settings.ini" ,gtk3-settings)
+   `(".config/ra-multiplex/config.toml" ,ra-multiplex-config)
+   `(".config/alacritty/alacritty.yml" ,alacritty-config)
+   `(".config/notifymuch/notifymuch.cfg" ,notifymuch-config)
+   `(".config/atuin/config.toml" ,atuin-config)
+   `(".config/sway" ,(i3-home sway-config))
+   `(".cargo/config.toml" ,cargo-sccache-setup)
+   `(".inputrc" ,inputrc)
+   ;`(".bazelrc" ,bazel-settings) doesnt really work
+   `(".asoundrc" ,asoundrc)
+   `(".tmux.conf" ,tmux-config)
+   `(".ideavimrc" ,ideavim-config)
+   `(".gitconfig" ,gitconfig)
+   `(".terminfo" ,emacs-terminfo)))
 
 (define-public bashrc (mixed-text-file "bashrc" "export SHELL
 
@@ -1052,10 +1073,14 @@ if [[ $- != *i* ]]; then
 fi
 
 source /etc/bashrc
+export PROMPT_COMMAND=
 source " prompt-config "
 set -o vi
 
-source " (file-append go-github-com-junegunn-fzf "/src/github.com/junegunn/fzf/shell/key-bindings.bash") "
+source " (file-append bash-preexec "/bash-preexec.sh") "
+export ATUIN_NOBIND='true'
+eval \"$(" (file-append atuin "/bin/atuin") " init bash)\"
+bind -x '\"\\C-r\": __atuin_history'
 
 source /run/current-system/profile/etc/profile.d/nix.sh
 
@@ -1065,14 +1090,9 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
  --color=info:"   (theme* green)  ",prompt:"  (theme* magenta) ",pointer:" (theme* red)    "
  --color=marker:" (theme* blue)   ",spinner:" (theme* magenta) ",header:"  (theme* orange) "'
 
-export HISTCONTROL=ignoredups:erasedups
-shopt -s histappend
-export PROMPT_COMMAND=\"history -a;history -n;__prompt\"
+export PROMPT_COMMAND=\"$PROMPT_COMMAND;__prompt\"
 
 eval \"$(" (file-append zoxide "/bin/zoxide") " init --cmd cd bash)\"
-
-HISTSIZE=
-HISTFILESIZE=
 
 export XAUTHORITY=" xauthority-file "
 

@@ -102,22 +102,11 @@
     (append
      (list
       (file-system
-       (device (uuid "5195ef5f-6cac-4ac1-964d-5a50d7cf45ea"))
-       (mount-point "/backup")
-       (type "btrfs")
-       (options "compress=zstd:9,acl"))
-      (file-system
-       (device (uuid "cd09cac9-d42e-4f12-9f7a-b93121b3b5fb"))
+       (device (uuid "0cdb09ed-f2c0-4dd0-9bf5-287272ee584b"))
        (mount-point "/")
-       (type "btrfs")
-       (options "compress=zstd,discard,subvolid=5439,subvol=@guix_root,acl"))
+       (type "ext4"))
       (file-system
-       (device (uuid "cd09cac9-d42e-4f12-9f7a-b93121b3b5fb"))
-       (mount-point "/data")
-       (type "btrfs")
-       (options "compress=zstd,discard,subvolid=259,subvol=@robin,acl"))
-      (file-system
-       (device (uuid "1BD1-2470" 'fat))
+       (device (uuid "CA43-9C50" 'fat))
        (mount-point "/boot/efi")
        (type "vfat"))
       (file-system
@@ -134,9 +123,6 @@
                  (syslog-configuration
                   (inherit config)
                   (config-file syslog.conf)))
-                    
-                                  
-                                
                 (openssh-service-type
                  config =>
                  (openssh-configuration
@@ -157,84 +143,85 @@
                                 (postgresql-role
                                  (name "telegraf")
                                  (create-database? #t))))
-               (service telegraf-service-type
-                        (telegraf-configuration
-                         (influxdb-token-file "/data/projects/guix_system/data/secrets/mel_telegraf_token") ; TODO(robin): use vault??
-                         (influxdb-bucket "monitoring")
-                         (influxdb-orga "infra")
-                         (config (list
-                                  %telegraf-default-config
-                                  extra-telegraf-config))))
-               (service vault-service-type
-                        (vault-configuration
-                         (address "0.0.0.0:8200")
-                         (ui? #t)
-                         (tls-key-file "/data/projects/guix_system/data/secrets/vault.server.key.pem")
-                         (tls-cert-file "/data/projects/guix_system/data/vault.server.cert.pem")
-                         (unauthenticated-metrics-access? #t)))
-               (service vault-unseal-service-type
-                        (vault-unseal-configuration
-                         (vault-connection root-vault-connection)
-                         (unsealing-keys-file "/data/projects/guix_system/data/secrets/vault_unseal_keys")))
+               ;; (service telegraf-service-type
+               ;;          (telegraf-configuration
+               ;;           (influxdb-token-file "/data/projects/guix_system/data/secrets/mel_telegraf_token") ; TODO(robin): use vault??
+               ;;           (influxdb-bucket "monitoring")
+               ;;           (influxdb-orga "infra")
+               ;;           (config (list
+               ;;                    %telegraf-default-config
+               ;;                    extra-telegraf-config))))
+               ;; (service vault-service-type
+               ;;          (vault-configuration
+               ;;           (address "0.0.0.0:8200")
+               ;;           (ui? #t)
+               ;;           (tls-key-file "/data/projects/guix_system/data/secrets/vault.server.key.pem")
+               ;;           (tls-cert-file "/data/projects/guix_system/data/vault.server.cert.pem")
+               ;;           (unauthenticated-metrics-access? #t)))
+               ;; (service vault-unseal-service-type
+               ;;          (vault-unseal-configuration
+               ;;           (vault-connection root-vault-connection)
+               ;;           (unsealing-keys-file "/data/projects/guix_system/data/secrets/vault_unseal_keys")))
                (service generated-secrets-root-service-type)
-               (vault-generated-secret
-                concourse-web-vault-role-id
-                #~(lambda ()
-                    (let* ((conn #$root-vault-connection)
-                           (mount (assoc-ref (vault-list-mounts conn) "concourse/")))
-                      (begin
-                        (unless mount
-                          (vault-enable-mount conn "concourse" '(("type" . "kv") ("options" . (("version" . "2"))))))
-                        (vault-set-policy conn "concourse" "path \"concourse/*\" {
-    policy = \"read\"
-}")
-                        (unless (assoc-ref (vault-list-auth conn) "approle/")
-                          (vault-enable-auth conn "approle"))
-                        (vault-set-approle conn "concourse" #("concourse"))
-                        (vault-get-approle-role-id conn "concourse"))))
-                '(vault-unseal)) ;; TODO(robin): figure out how to add this automatically on localhost
-               (with-generated-secrets
-                (list concourse-web-vault-role-id)
-                (lambda _
-                  (vault-generated-secret
-                   concourse-web-vault-secret-id
-                   #~(lambda ()
-                       (assoc-ref (vault-generate-secret-id #$root-vault-connection "concourse") "secret_id")))))
-               (with-generated-secrets
-                (list concourse-web-vault-role-id concourse-web-vault-secret-id)
-                (lambda (secrets)
-                  (let* ((vault-role-id (assoc-ref secrets 'concourse-web-vault-role-id))
-                         (vault-secret-id (assoc-ref secrets 'concourse-web-vault-secret-id)))
-                    (service concourse-web-service-type
-                             (concourse-web-configuration
-                              (local-users
-                               '(("admin" "$2b$12$KnZ1OzFYJFQ.GGdZXFCMr.BXr9TRuvsz7z7lEJg88FKIm/QoeOSEm")))
-                              (main-team-local-user "admin")
-                              (tsa-host-key "/data/projects/guix_system/data/secrets/tsa_host_key")
-                              (authorized-worker-keys '("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCqBfLSGvGdYsmDhE0bqSN38oAbcndV8euE4qiqsKa0RUTg+gIhfzG/HYyUlWFG3eQNpE+v58N8XDD3NQtzqhY5m3ClscVtNpPqYDScoT8+QJDZrJs7yHmOsUP0nm+QBsIJB7YTZhrzcFI5sa2IGghG930Fy+AdtSejwpE5lx1jiaIlFHOaq4FQkbHHhtewWYDqBf/K7boui+/ew+HyyIktiApwuRXyNs2azCC9H2ohjyM12ur+X7Is3bc6awAlLQmjs944sxZC2uHqXF3CYuc5G//zsZPbT94vcssp5OPyQbjBYLlo5/7R7F0GIhDApCEv8OqmO4SCmwj+w3Jqk4abRS6+H+270xnEYE3Rlwi6J2dlkl+r8ON7zQaDl/mc61cyeYh4a66YWq+gW56jdbNNAdC3PDQqaosNbQlWNWhesTlqLV1c8S4S+2YZRrAU+tAIyPi7W5d3VY8jkF3FFqpfs8TI6S4ArrjXAXKZAWOgsOESDxFG/jvGpQQLXx+NNglgo6x9I93FNPFYyr8NYu24be/E9edPkMEZeL4kAgHNrxcEXo7535BOJNfOSkERulHv20Z+uCeBYJEuUs4I889MwmV0btmAltEslITCkJTOWV3Y+uCYJjLNWtUQsmGdGG8lj1qNK4rlLUk+a+qFaiaHinsEGVXaLta7sNckYot1Sw=="))
-                              (external-url "https://ci.coroot.de")
-                              (session-singing-key "/data/projects/guix_system/data/secrets/session_signing_key")
-                              (vault-url "https://127.0.0.1:8200")
-                              (vault-ca-dir (vault-cert-dir "/data/projects/guix_system/data/vault.server.cert.pem"))
-                              (vault-role-id-file vault-role-id)
-                              (vault-secret-id-file vault-secret-id)
-                              (prometheus-bind-ip "127.0.0.1")
-                              (prometheus-bind-port "8123"))))))
-               (service concourse-worker-service-type
-                        (concourse-worker-configuration
-                         (private-key "/data/projects/guix_system/data/secrets/worker_key")
-                         (work-dir "/var/lib/concourse-worker/work")
-                         (runtime 'containerd)
-                         (mtu 1500)
-                         (tsa-public-key "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC3QQFsAn7xdBdR7uDlNid0lOSeGED+/N4yKHPOVc6texlznHnGDdOGvp0QwhMsYMs4RGLrYdYs3E/FtaJY1ze6peqj6VYrtuFtbWnWLjtQwkpBcI+tIOK1jnx4LW/kBDrpMzdK1tOApzUfC3JODFpgUjlBDm2A+npT3nceYuw5pjcVPpszauyXm3vBvvtdiKIIw+F4o8xA/AHTbjIupgucuPwku3fl1+6FbXz7zLOziZfrj/y09TmvaEz5OxnS70B852r/aZ4PgTJ36f21RZW6SXGvCbi2jy+vnBMOPvw56Hza4SXFGSIDFBx6nfWIxU+r8x15fi9SvN6eHQSpETWl6LaSjXhJs9hZKlTrTejEWleTsVsZ5/VhekoOm7V0IwVo3K1535Q4TIM3njA1TgLPEfr7Mq+bccKaD5mLCuoinb10PhWILFLCHHP2lCLRHz/w9QVPguVNpViMC3ywDcqff0EPCrjXYv1ZBx+5RvAGQDCqZ/RHgv7Rt4qXSRezczBI4f45OBkoR/sWhxtNgm2IYBZSe4cecAvmIIvVrTh6/sGcMJaEH9gnEX4JtTTHR45U3nbf2riduOBd9owzVjXW9Yj66IwDFg68rT9eMsIQWKFJeW0/+SvYo17ytpxdNKhZARMQR78Uze4FQEoIUl/Cp1rGOHhQ05unYmOC9opP3w==")))
-               (service btrbk-service-type
-                        (btrbk-configuration
-                         (schedule "04 * * * *")
-                         (snapshot-preserve-min "1d")
-                         (snapshot-preserve "7d 4w *m")
-                         (volume "/backup")
-                         (subvolumes '("seshat-backup"))
-                         (pre-run-hook #~(string-append #$rsync "/bin/rsync" " -azz --exclude=/proc --exclude=/dev --exclude=/sys --exclude=/run -e 'ssh -i /home/robin/.ssh/id_ed25519' --delete --inplace --numeric-ids --acls --xattrs coroot.de:/ /backup/seshat-backup/"))))
+              ;;  (vault-generated-secret
+;;                 concourse-web-vault-role-id
+;;                 #~(lambda ()
+;;                     (let* ((conn #$root-vault-connection)
+;;                            (mount (assoc-ref (vault-list-mounts conn) "concourse/")))
+;;                       (begin
+;;                         (unless mount
+;;                           (vault-enable-mount conn "concourse" '(("type" . "kv") ("options" . (("version" . "2"))))))
+;;                         (vault-set-policy conn "concourse" "path \"concourse/*\" {
+;;     policy = \"read\"
+;; }")
+;;                         (unless (assoc-ref (vault-list-auth conn) "approle/")
+;;                           (vault-enable-auth conn "approle"))
+;;                         (vault-set-approle conn "concourse" #("concourse"))
+;;                         (vault-get-approle-role-id conn "concourse"))))
+;;                 '(vault-unseal))
+               ;; TODO(robin): figure out how to add this automatically on localhost
+               ;; (with-generated-secrets
+               ;;  (list concourse-web-vault-role-id)
+               ;;  (lambda _
+               ;;    (vault-generated-secret
+               ;;     concourse-web-vault-secret-id
+               ;;     #~(lambda ()
+               ;;         (assoc-ref (vault-generate-secret-id #$root-vault-connection "concourse") "secret_id")))))
+               ;; (with-generated-secrets
+               ;;  (list concourse-web-vault-role-id concourse-web-vault-secret-id)
+               ;;  (lambda (secrets)
+               ;;    (let* ((vault-role-id (assoc-ref secrets 'concourse-web-vault-role-id))
+               ;;           (vault-secret-id (assoc-ref secrets 'concourse-web-vault-secret-id)))
+               ;;      (service concourse-web-service-type
+               ;;               (concourse-web-configuration
+               ;;                (local-users
+               ;;                 '(("admin" "$2b$12$KnZ1OzFYJFQ.GGdZXFCMr.BXr9TRuvsz7z7lEJg88FKIm/QoeOSEm")))
+               ;;                (main-team-local-user "admin")
+               ;;                (tsa-host-key "/data/projects/guix_system/data/secrets/tsa_host_key")
+               ;;                (authorized-worker-keys '("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCqBfLSGvGdYsmDhE0bqSN38oAbcndV8euE4qiqsKa0RUTg+gIhfzG/HYyUlWFG3eQNpE+v58N8XDD3NQtzqhY5m3ClscVtNpPqYDScoT8+QJDZrJs7yHmOsUP0nm+QBsIJB7YTZhrzcFI5sa2IGghG930Fy+AdtSejwpE5lx1jiaIlFHOaq4FQkbHHhtewWYDqBf/K7boui+/ew+HyyIktiApwuRXyNs2azCC9H2ohjyM12ur+X7Is3bc6awAlLQmjs944sxZC2uHqXF3CYuc5G//zsZPbT94vcssp5OPyQbjBYLlo5/7R7F0GIhDApCEv8OqmO4SCmwj+w3Jqk4abRS6+H+270xnEYE3Rlwi6J2dlkl+r8ON7zQaDl/mc61cyeYh4a66YWq+gW56jdbNNAdC3PDQqaosNbQlWNWhesTlqLV1c8S4S+2YZRrAU+tAIyPi7W5d3VY8jkF3FFqpfs8TI6S4ArrjXAXKZAWOgsOESDxFG/jvGpQQLXx+NNglgo6x9I93FNPFYyr8NYu24be/E9edPkMEZeL4kAgHNrxcEXo7535BOJNfOSkERulHv20Z+uCeBYJEuUs4I889MwmV0btmAltEslITCkJTOWV3Y+uCYJjLNWtUQsmGdGG8lj1qNK4rlLUk+a+qFaiaHinsEGVXaLta7sNckYot1Sw=="))
+               ;;                (external-url "https://ci.coroot.de")
+               ;;                (session-singing-key "/data/projects/guix_system/data/secrets/session_signing_key")
+               ;;                (vault-url "https://127.0.0.1:8200")
+               ;;                (vault-ca-dir (vault-cert-dir "/data/projects/guix_system/data/vault.server.cert.pem"))
+               ;;                (vault-role-id-file vault-role-id)
+               ;;                (vault-secret-id-file vault-secret-id)
+               ;;                (prometheus-bind-ip "127.0.0.1")
+               ;;                (prometheus-bind-port "8123"))))))
+               ;; (service concourse-worker-service-type
+               ;;          (concourse-worker-configuration
+               ;;           (private-key "/data/projects/guix_system/data/secrets/worker_key")
+               ;;           (work-dir "/var/lib/concourse-worker/work")
+               ;;           (runtime 'containerd)
+               ;;           (mtu 1500)
+               ;;           (tsa-public-key "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC3QQFsAn7xdBdR7uDlNid0lOSeGED+/N4yKHPOVc6texlznHnGDdOGvp0QwhMsYMs4RGLrYdYs3E/FtaJY1ze6peqj6VYrtuFtbWnWLjtQwkpBcI+tIOK1jnx4LW/kBDrpMzdK1tOApzUfC3JODFpgUjlBDm2A+npT3nceYuw5pjcVPpszauyXm3vBvvtdiKIIw+F4o8xA/AHTbjIupgucuPwku3fl1+6FbXz7zLOziZfrj/y09TmvaEz5OxnS70B852r/aZ4PgTJ36f21RZW6SXGvCbi2jy+vnBMOPvw56Hza4SXFGSIDFBx6nfWIxU+r8x15fi9SvN6eHQSpETWl6LaSjXhJs9hZKlTrTejEWleTsVsZ5/VhekoOm7V0IwVo3K1535Q4TIM3njA1TgLPEfr7Mq+bccKaD5mLCuoinb10PhWILFLCHHP2lCLRHz/w9QVPguVNpViMC3ywDcqff0EPCrjXYv1ZBx+5RvAGQDCqZ/RHgv7Rt4qXSRezczBI4f45OBkoR/sWhxtNgm2IYBZSe4cecAvmIIvVrTh6/sGcMJaEH9gnEX4JtTTHR45U3nbf2riduOBd9owzVjXW9Yj66IwDFg68rT9eMsIQWKFJeW0/+SvYo17ytpxdNKhZARMQR78Uze4FQEoIUl/Cp1rGOHhQ05unYmOC9opP3w==")))
+               ;; (service btrbk-service-type
+               ;;          (btrbk-configuration
+               ;;           (schedule "04 * * * *")
+               ;;           (snapshot-preserve-min "1d")
+               ;;           (snapshot-preserve "7d 4w *m")
+               ;;           (volume "/backup")
+               ;;           (subvolumes '("seshat-backup"))
+               ;;           (pre-run-hook #~(string-append #$rsync "/bin/rsync" " -azz --exclude=/proc --exclude=/dev --exclude=/sys --exclude=/run -e 'ssh -i /home/robin/.ssh/id_ed25519' --delete --inplace --numeric-ids --acls --xattrs coroot.de:/ /backup/seshat-backup/"))))
                (service libvirt-service-type
                         (libvirt-configuration
                          (unix-sock-group "libvirt")))
@@ -249,3 +236,5 @@
                         (network-manager-configuration
                          (dns "dnsmasq")
                          (vpn-plugins (list network-manager-openvpn network-manager-openconnect network-manager-vpnc)))))))))
+
+mel-system-config

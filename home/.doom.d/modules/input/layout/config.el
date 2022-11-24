@@ -10,8 +10,8 @@ If 'strict, the module does a normal swap and 'c' bindings go to 'h', 'r' bindin
 
 In all cases, 'h' functions go to 'c' and 'l' ones go to 'r' so the navigation keys still feel vim-like.")
 
-(when (featurep! +bepo)
+(when (modulep! +bepo)
   (load! "+bepo"))
 
-(when (featurep! +vup)
+(when (modulep! +vup)
   (load! "+vup"))

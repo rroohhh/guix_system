@@ -50,7 +50,7 @@
   (let ((base
          (make-linux* linux-nonfree
                #:extra-version "vup"
-               #:extra-options `(;; Needed for probes
+               #:extra-options `( ;; Needed for probes
                                  ("CONFIG_UPROBE_EVENTS" . #t)
                                  ("CONFIG_KPROBE_EVENTS" . #t)
                                  ;; kheaders module also helpful for tracing
@@ -69,13 +69,17 @@
                                  ("CONFIG_HAVE_EBPF_JIT" . #t)
                                  ;; optional, for kprobes
                                  ("CONFIG_BPF_EVENTS" . #t)
-                                 ;; kheaders module
-                                 ("CONFIG_IKHEADERS" . #t)
                                  ;; configs module
                                  ("CONFIG_IKCONFIG" . #t)
                                  ("CONFIG_IKCONFIG_PROC" . #t)
                                  ;; I915 low level tracing
-                                 ("CONFIG_DRM_I915_LOW_LEVEL_TRACEPOINTS" . #t)))))
+                                 ("CONFIG_DRM_I915_LOW_LEVEL_TRACEPOINTS" . #t)
+                                 ("CONFIG_X86_CPU_RESCTRL" . #t)
+                                 ("CONFIG_PERF_EVENTS_AMD_UNCORE" . #t)
+
+                                 ("CONFIG_X86_AMD_PSTATE" . m)
+                                 ("CONFIG_HSA_AMD_SVM" . #t)
+                                 ("CONFIG_HSA_AMD" . #t)))))
     (package
       (inherit base)
       (inputs `(("cpio" ,cpio) ,@(package-inputs base)))

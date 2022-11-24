@@ -6,27 +6,30 @@
   #:use-module ((gnu packages fpga) #:select (gtkwave))
 
   #:use-module (vup rust-nightly)
-  #:use-module (vup fastlane)
+  #:use-module (vup tmp)
   #:use-module (vup qt-apps)
   #:use-module (vup freecad)
   #:use-module (vup emacs)
   #:use-module (vup root)
   #:use-module (vup mesa)
+  #:use-module (vup linux)
   #:use-module (vup misc)
   #:use-module (vup fpga)
   #:use-module (vup python-xyz)
   #:use-module (vup horizon)
   #:use-module (vup unrar)
-  #:use-module (vup docker)
+  #:use-module (vup sioyek)
+  #:use-module (vup atuin)
+  ;; #:use-module (vup docker)
   #:use-module (vup x)
   #:use-module (vup solvespace)
-  #:use-module (vup tmp)
+  ;; #:use-module (vup tmp)
   #:use-module (vup concourse)
   #:use-module (vup rust-apps)
 
   #:use-module (games packages factorio))
 
-(use-package-modules wm pciutils video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation vim python-build emacs bootloaders cpio gnupg vnc vpn python-crypto sphinx build-tools image cups license bison flex)
+(use-package-modules docker wm pciutils video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation vim python-build emacs bootloaders cpio gnupg vnc vpn python-crypto sphinx build-tools image cups license bison flex graph gcc xiph)
 
 (define-public base-packages
   (list
@@ -58,7 +61,8 @@
    jq
    xxd
    mbuffer
-   emacs-pgtk-native-comp
+   ; emacs-pgtk-native-comp
+   emacs
    zip
    lz4
    unzip
@@ -70,10 +74,12 @@
 
 (define-public desktop-packages
   (list
-  go-github-com-junegunn-fzf
+   go-github-com-junegunn-fzf
    xdot
    (list isc-bind "utils")
    xdg-utils
+
+   atuin
 
    qpdf
    poppler
@@ -95,7 +101,7 @@
 
    fly
 
-   evince
+   sioyek
    feh
    scrot
    grim
@@ -126,7 +132,7 @@
    ;; IM
    qtox
    quassel
-   telegram-desktop 
+   telegram-desktop-fixed
    mumble
 
    ;; desktop shit
@@ -156,7 +162,7 @@
 
    ;; wine
    ;; wine-staging
-   ;; wine64-staging
+   wine64
 
    ;; video
    gimp
@@ -211,6 +217,7 @@
    solvespace
 
    ;; java
+                                        ;(list openjdk17 "jdk")
    (list icedtea "jdk")
 
    ;; mail
@@ -231,13 +238,16 @@
 (define-public dev-packages
   (list
    gdb
+   (list gdb "debug")
    valgrind
-   perf
+   perf-nonfree
+   cpupower-nonfree
 
    dtc
    dfu-util
    cpio
    screen
+
 
    ltrace
    strace
@@ -291,20 +301,28 @@
    symbiyosys
 
 
-   rust-ra-multiplex-0.1
+   ra-multiplex
 
 
    ;; lang
-   go
+   go-1.19
    swi-prolog
+   ;; rust-nightly
    rust-nightly
    ;; (list rust-nightly "doc")
-   clang-13
+   clang-14
+   clang-toolchain-14
+   clang-runtime-14
+   ;; (list clang-14 "debug")
+   libomp
    ;; (list clang-12 "extra") gone?
    lld
+   gcc
    gcc-toolchain ; keep this in sync withThe system toolchain, otherwise linking shit sometime breaks (fuck c++) 
+   (list gcc-toolchain "debug") ; keep this in sync withThe system toolchain, otherwise linking shit sometime breaks (fuck c++)
    ;; binutils-gold
    gfortran-toolchain
+   (list gfortran-toolchain "debug")
    perl
    node-lts))
 
@@ -316,8 +334,7 @@
 
 (define-public android-packages
   (list
-   adb
-   fastboot))
+   adb))
 
 (define-public python-packages
   (list
@@ -335,12 +352,12 @@
    python-epc
     ;; python-chipsec ; broken on linux >= 5.7.0
    ;; python-varname
-   python-pandas-fixed
+   python-pandas
    python-tqdm
-   python-scipy
+   python-scipy-fixed
    ;; python-demjson
    python-matplotlib
-   python-quadpy
+   ;; python-quadpy ; broken
    python-fitsio
    python-colorhash
    ;; python-pint
@@ -383,6 +400,8 @@
    python-bitarray
    python-imageio
    python-numba
+   python-zstandard
+   ;; python-plotly
    python-zarr))
 
 
@@ -411,9 +430,18 @@
    fuse
    cmake
    expat
-   qtwayland
-   qtsvg
+   cereal
+   pybind11
+
+   qtwayland-5
+   (list qtwayland-5 "debug")
+   qtsvg-5
+   (list qtsvg-5 "debug")
    qtx11extras
+   (list qtx11extras "debug")
+   qtbase-5
+   (list qtbase-5 "debug")
+
    dbus
    libx11
    libxcursor
@@ -454,15 +482,15 @@
    openblas
    lapack
    sfml
-   protobuf
+   ; protobuf
    openmpi
    nss
    libxcomposite
    cups
    pipewire-0.3
    bison
-   flex
-   ))
+   flex))
+
 
 
 (define-public full-packages

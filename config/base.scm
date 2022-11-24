@@ -19,7 +19,8 @@
   #:use-module (gnu services ssh)
   #:use-module (gnu services sysctl)
   #:use-module (gnu services shepherd)
-  #:use-module ((gnu services desktop) #:select (accountsservice-service))
+  #:use-module ((gnu services desktop) #:select (accountsservice-service elogind-service))
+  #:use-module (gnu system setuid)
   #:use-module (vup linux)
   #:use-module (vup hwinfo)
   #:use-module (config linux)
@@ -44,11 +45,11 @@
 
     (bootloader (bootloader-configuration
                  (bootloader grub-efi-bootloader)
-                 (target "/boot/efi")
+                 (targets '("/boot/efi"))
                  (keyboard-layout keyboard-layout)))
 
     (setuid-programs (append (list
-                              (file-append hwinfo "/bin/hwinfo"))
+                              (file-like->setuid-program (file-append hwinfo "/bin/hwinfo")))
                              %setuid-programs))
 
     (kernel linux-nonfree/extra_config)
@@ -87,7 +88,7 @@
     ,(service ntp-service-type)
     ,(service openssh-service-type
               (openssh-configuration
-               (permit-root-login 'without-password)
+               (permit-root-login 'prohibit-password)
                (x11-forwarding? #t)
                (authorized-keys ssh-default-authorized-keys)
                (extra-content "PermitUserEnvironment yes")))
@@ -100,10 +101,14 @@
         (guix-service-type config =>
                 (guix-configuration
                   (inherit config)
+                  (substitute-urls
+                    (append (list "https://substitutes.nonguix.org")
+                            %default-substitute-urls))
                   (discover? #t)
                   (authorized-keys
                    (append (list (local-file "../data/ada-signing-key.pub")
-                                 (local-file "../data/mel-signing-key.pub"))
+                                 (local-file "../data/mel-signing-key.pub")
+                                 (local-file "../data/nonguix-signing-key.pub"))
                            %default-authorized-guix-keys))))
         (sysctl-service-type config =>
                        (sysctl-configuration

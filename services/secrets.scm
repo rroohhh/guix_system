@@ -42,7 +42,7 @@
   (secrets                   generated-secrets-configuration-secrets
                              (default '())))
 
-(define-record-type* <generated-secret-generator
+(define-record-type* <generated-secret-generator>
   generated-secret-generator make-generated-secret-generator
   generated-secret-generator?
   ;; <generated-secret>

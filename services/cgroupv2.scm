@@ -21,30 +21,61 @@
             docker-service-type
             docker-configuration))
 
-(define-configuration docker-configuration
-  (docker
-   (package docker)
-   "Docker daemon package.")
-  (docker-cli
-   (package docker-cli)
-   "Docker client package.")
-  (containerd
-   (package containerd)
-   "containerd package.")
-  (proxy
-   (package docker-libnetwork-cmd-proxy)
-   "The proxy package to support inter-container and outside-container
-loop-back communications.")
-  (enable-proxy?
-   (boolean #t)
-   "Enable or disable the user-land proxy (enabled by default).")
-  (debug?
-   (boolean #f)
-   "Enable or disable debug output.")
-  (enable-iptables?
-   (boolean #t)
-   "Enable addition of iptables rules (enabled by default).")
-  (no-serialization))
+(define-record-type* <docker-configuration>
+  docker-configuration make-docker-configuration
+  docker-configuration?
+  ;; <package>
+  (docker                      docker-configuration-docker
+                               (default docker))
+  ;; <package>
+  (docker-cli                  docker-configuration-docker-cli
+                               (default docker-cli))
+  ;; <package>
+  (containerd                  docker-configuration-containerd
+                               (default containerd))
+  ;; <package>
+  (proxy                       docker-configuration-proxy
+                               (default docker-libnetwork-cmd-proxy))
+  ;; boolean
+  (enable-proxy?               docker-configuration-enable-proxy?
+                               (default #t))
+  ;; boolean
+  (debug?                      docker-configuration-debug?
+                               (default #f))
+  ;; boolean
+  (enable-iptables?            docker-configuration-enable-iptables?
+                               (default #t))
+  ;; file
+  (config                      docker-configuration-config
+                               (default #t)))
+
+;; (define-configuration docker-configuration
+;;   (docker
+;;    (package docker)
+;;    "Docker daemon package.")
+;;   (docker-cli
+;;    (package docker-cli)
+;;    "Docker client package.")
+;;   (containerd
+;;    (package containerd)
+;;    "containerd package.")
+;;   (proxy
+;;    (package docker-libnetwork-cmd-proxy)
+;;    "The proxy package to support inter-container and outside-container
+;; loop-back communications.")
+;;   (enable-proxy?
+;;    (boolean #t)
+;;    "Enable or disable the user-land proxy (enabled by default).")
+;;   (debug?
+;;    (boolean #f)
+;;    "Enable or disable debug output.")
+;;   (enable-iptables?
+;;    (boolean #t)
+;;    "Enable addition of iptables rules (enabled by default).")
+;;   (config
+;;    (boolean #t)
+;;    "Docker daemon config.json")
+;;   (no-serialization))
 
 (define %docker-accounts
   (list (user-group (name "docker") (system? #t))))
@@ -101,7 +132,8 @@ loop-back communications.")
          (enable-proxy? (docker-configuration-enable-proxy? config))
          (enable-iptables? (docker-configuration-enable-iptables? config))
          (proxy (docker-configuration-proxy config))
-         (debug? (docker-configuration-debug? config)))
+         (debug? (docker-configuration-debug? config))
+         (config (docker-configuration-config config)))
     (shepherd-service
            (documentation "Docker daemon.")
            (provision '(dockerd))
@@ -116,6 +148,10 @@ loop-back communications.")
                            "-p" "/var/run/docker.pid"
                            "--containerd=/run/containerd/containerd_system.sock"
                            (string-append  "--default-runtime=" #$(file-append runc "/sbin/runc"))
+                           #$@(if config
+                                  (list #~(string-append
+                                           "--config-file=" #$config))
+                                  '())
                            #$@(if debug?
                                   '("--debug" "--log-level=debug")
                                   '())
@@ -351,6 +387,7 @@ seats.)"
 
 (define elogind-service-type
   (service-type (name 'elogind)
+                (description "elogind")
                 (extensions
                  (list (service-extension dbus-root-service-type
                                           elogind-dbus-service)
