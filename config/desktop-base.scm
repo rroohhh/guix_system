@@ -17,9 +17,17 @@
   #:use-module (gnu services linux)
   #:use-module (gnu services desktop)
   #:use-module (gnu packages android)
+  #:use-module (gnu packages docker)
   #:use-module (vup caps2esc)
   ;; #:use-module (vup docker)
   #:use-module (vup python-xyz))
+
+(define-public docker-fixed
+  (package
+    (inherit docker)
+    (name "docker-fixed")
+    (arguments
+     (append `(#:tests? #f ,@(package-arguments docker))))))
 
 (define-public base-desktop-system-config
   (operating-system
@@ -57,6 +65,7 @@
     ,(service root-remount-service-type)
     ,(service docker-service-type
               (docker-configuration
+               (docker docker-fixed)
                (config (plain-file "daemon.json"
                                           "{
   \"ipv6\": false,
