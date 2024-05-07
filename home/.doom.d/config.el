@@ -66,6 +66,10 @@
 
 (map! :n ";" 'comment-dwim)
 (map! :v ";" 'comment-dwim)
+(map! :leader "," 'helm-mini)
+
+(after! helm-rg
+  (setq! helm-rg-display-buffer-normal-method #'switch-to-buffer))
 
 (after! evil
   (setq! evil-want-minibuffer nil)
@@ -97,6 +101,8 @@
   (modify-face 'notmuch-tag-unread "#b8bb26"))
 
 (add-hook! 'prog-mode-hook #'rainbow-delimiters-mode)
+
+(use-package! protobuf-mode)
 
 (use-package! beacon
   :init
@@ -132,8 +138,10 @@
 
 (remove-hook! 'tty-setup-hook #'xterm-mouse-mode)
 
-(setq remember-notes-auto-save-visited-file-name t
-      remember-notes-buffer-name "*scratch*")
+(after! org
+  (setq remember-notes-auto-save-visited-file-name t
+        remember-notes-buffer-name "*scratch*"
+        remember-notes-initial-major-mode 'text-mode))
 
 (setq initial-buffer-choice
       (lambda () (kill-buffer remember-notes-buffer-name)
@@ -152,7 +160,15 @@
 (defadvice lsp-format-buffer (before disable-gc activate) (setq gc-cons-threshold most-negative-fixnum))
 (defadvice lsp-format-buffer (after enable-gc activate) (run-at-time 1 nil lambda () (setq gc-cons-threshold doom-gc-cons-threshold)))
 
+;; (add-hook! 'before-save-hook #'lsp-format-buffer)
+(remove-hook! 'before-save-hook #'lsp-format-buffer)
+(add-to-list 'auto-mode-alist '("\\.tcc\\'" . c++-mode))
+(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
+;; (setq +format-on-save-enabled-modes (append +format-on-save-enabled-modes '(c++-mode)))
+;; (add-hook! 'after-change-major-mode-hook #'+format-enable-on-save-maybe-h)
+
 (after! lsp-mode
+  (setq lsp-modeline-diagnostics-enable nil)
   (lsp-register-client
    (make-lsp-client :new-connection (lsp-tramp-connection '("singularity" "exec" "--app" "dls" "/containers/stable/latest" "clangd"))
                     :major-modes '(c++-mode c-mode)
@@ -162,21 +178,50 @@
    (make-lsp-client :new-connection (lsp-tramp-connection '("singularity" "exec" "--app" "dls" "/containers/stable/latest" "pylsp"))
                     :major-modes '(python-mode)
                     :remote? t
-                    :server-id 'pyls-remote)))
+                    :server-id 'pyls-remote))
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-tramp-connection '("singularity" "exec" "/containers/stable/asic_latest" "/hyperfast/home/rheinema/.cargo/bin/svls"))
+                    :major-modes '(verilog-mode)
+                    :remote? t
+                    :server-id 'verilog-remote)))
 
+(after! ein
+  (setq! ein:polymode))
+;; (message ein:$kernelspec-language)
 (after! org
-  (setcdr (assoc "\\.pdf\\'" org-file-apps) "evince %s"))
+  (setcdr (assoc "\\.pdf\\'" org-file-apps) "sioyek %s"))
 
+(after! recentf
+  (setq recentf-max-saved-items 10000)
+  (setq recentf-max-menu-items 10000))
+
+(setq lsp-log-io 't)
 
 ;(after! evil-org
 ;  (map! :prefix "g" :map 'evil-org-mode-map "s h" nil))
-(setq! debug-on-message "Key sequence.*")
+;; (setq! debug-on-message "Key sequence.*")
+(setq! debug-on-message "Reformatted.*")
 
 (setq +tree-sitter-hl-enabled-modes t)
+
+(after! verilog-mode
+  (setq! verilog-indent-level 4)
+  (setq! verilog-indent-level-module 4)
+  (setq! verilog-indent-level-directive 0)
+  (setq! verilog-indent-level-declaration 4)
+  (setq! verilog-indent-level-behavioral 4)
+  (setq! verilog-indent-lists nil)
+  (setq! verilog-cexp-indent 4)
+  (setq! verilog-auto-lineup 'all)
+  (defun verilog-mode-config-hook ()
+    (setq indent-tabs-mode t)
+    (setq tab-width 4))
+  (add-hook 'verilog-mode-hook 'verilog-mode-config-hook))
 
 
 (after! vertico
   (map! :map vertico-map "/" 'vertico-directory-enter))
+
 
 (use-package! org-caldav
   :init
@@ -191,11 +236,14 @@
          org-caldav-debug-level 1
          org-caldav-autosync-idle-seconds 10)
   (org-caldav-autosync-mode 1))
-(setq tramp-verbose 8)
+;; (setq tramp-verbose 8)
 (connection-local-set-profile-variables 'remote-with-singularity-dls
-                                        '((tramp-remote-path . (tramp-own-remote-path tramp-default-remote-path))))
+                                        '((tramp-remote-path . (tramp-own-remote-path tramp-default-remote-path "/hyperfast/home/rheinema/p/verilator/bin"))))
 (connection-local-set-profiles
  '(:application tramp :machine "hel") 'remote-with-singularity-dls)
+
+(connection-local-set-profiles
+ '(:application tramp :machine "uranus") 'remote-with-singularity-dls)
 
 
 (setq! tramp-connection-properties
@@ -211,3 +259,5 @@
 (set-fontset-font t nil (font-spec :size 20 :name "Noto Sans"))
 
 (setq auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc"))
+
+(setq verilog-indent-lists 'nil)

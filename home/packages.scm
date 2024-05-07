@@ -1,35 +1,84 @@
 (define-module (home packages)
+  #:use-module (config sysprof)
   #:use-module (vup patches)
-  #:use-module (vup firefox)
   #:use-module (gnu)
+  #:use-module (guix packages)
+  #:use-module (guix build-system trivial)
+  #:use-module (nongnu packages mozilla)
   #:use-module ((gnu packages python-xyz) #:prefix guix:)
   #:use-module ((gnu packages fpga) #:select (gtkwave))
 
   #:use-module (vup rust-nightly)
   #:use-module (vup tmp)
+  #:use-module (vup python-xyz)
   #:use-module (vup qt-apps)
-  #:use-module (vup freecad)
-  #:use-module (vup emacs)
   #:use-module (vup root)
   #:use-module (vup mesa)
   #:use-module (vup linux)
   #:use-module (vup misc)
   #:use-module (vup fpga)
-  #:use-module (vup python-xyz)
+  #:use-module (vup go-xyz)
+  #:use-module ((vup python-xyz) #:prefix vup:)
   #:use-module (vup horizon)
   #:use-module (vup unrar)
   #:use-module (vup sioyek)
   #:use-module (vup atuin)
   ;; #:use-module (vup docker)
   #:use-module (vup x)
-  #:use-module (vup solvespace)
+  #:use-module ((vup solvespace) #:prefix vup:)
   ;; #:use-module (vup tmp)
   #:use-module (vup concourse)
   #:use-module (vup rust-apps)
+  #:use-module (rosenthal packages wm)
+  #:use-module (guix-science packages python)
 
   #:use-module (games packages factorio))
 
-(use-package-modules docker wm pciutils video xorg chromium pulseaudio fonts messaging terminals rsync admin linux file flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation vim python-build emacs bootloaders cpio gnupg vnc vpn python-crypto sphinx build-tools image cups license bison flex graph gcc xiph)
+(use-package-modules task-management bash docker wm pciutils video xorg pulseaudio fonts messaging terminals rsync admin linux file flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation vim python-build emacs bootloaders cpio gnupg vnc vpn python-crypto sphinx build-tools image cups license bison flex graph gcc xiph hunspell telegram texlive rust)
+
+
+(define firefox-fixed
+  (package
+    (inherit firefox)
+    (native-inputs '())
+    (inputs
+     `(("bash" ,bash-minimal)
+       ("firefox" ,firefox)
+       ("pipewire" ,pipewire)
+       ("pciutils" ,pciutils)))
+    (build-system trivial-build-system)
+    (arguments
+     '(#:modules ((guix build utils))
+       #:builder
+       (begin
+         (use-modules (guix build utils))
+         (let* ((bash    (assoc-ref %build-inputs "bash"))
+                (firefox (assoc-ref %build-inputs "firefox"))
+                (pipewire (assoc-ref %build-inputs "pipewire"))
+                (pciutils (assoc-ref %build-inputs "pciutils"))
+                (out     (assoc-ref %outputs "out"))
+                (exe     (string-append out "/bin/firefox")))
+           (mkdir-p (dirname exe))
+
+           (call-with-output-file exe
+             (lambda (port)
+               (format port "#!~a \n
+export LD_LIBRARY_PATH=~a:~a:$LD_LIBRARY_PATH \n
+exec ~a $@\n"
+                       (string-append bash "/bin/bash")
+                       (string-append pipewire "/lib")
+                       (string-append pciutils "/lib")
+                       (string-append firefox "/bin/firefox"))))
+           (chmod exe #o555)
+
+           ;; Provide the manual and .desktop file.
+           (copy-recursively (string-append firefox "/share")
+                             (string-append out "/share"))
+           (substitute* (string-append
+                         out "/share/applications/firefox.desktop")
+             ((firefox) out))
+           #t))))))
+
 
 (define-public base-packages
   (list
@@ -69,7 +118,8 @@
    bzip2
    unrar
    p7zip
-   xz))
+   xz
+   zstd))
 
 
 (define-public desktop-packages
@@ -90,7 +140,7 @@
    hunspell
    hunspell-dict-en-us
    
-   python-antfs-cli
+   vup:python-antfs-cli
 
    masscan
    aircrack-ng
@@ -126,13 +176,13 @@
    ;; docker-compose
 
    ;; browser
-   ungoogled-chromium/wayland
-   ;; firefox/wayland
+   ;; ungoogled-chromium/wayland
+   firefox-fixed
 
    ;; IM
    qtox
    quassel
-   telegram-desktop-fixed
+   telegram-desktop
    mumble
 
    ;; desktop shit
@@ -184,7 +234,8 @@
 
    ;; xdk desktop
    xdg-desktop-portal
-   xdg-desktop-portal-wlr
+   ;; xdg-desktop-portal-wlr
+   xdg-desktop-portal-hyprland
                                         ; needed to choose the display with the above
    wofi
 
@@ -214,17 +265,30 @@
 
    ;; cad
    ;; freecad-fixed temporary
-   solvespace
+   vup:solvespace
 
    ;; java
                                         ;(list openjdk17 "jdk")
-   (list icedtea "jdk")
+   (list openjdk "jdk")
 
    ;; mail
    notmuch
    notifymuch
    msmtp
    ;; astroid
+
+   ;; bitwarden
+   ;; rbw
+
+   ;; sway
+   ;; sway
+   ;; hyprland
+   hyprland
+
+   swaynotificationcenter
+
+   ;; timekeeping
+   timewarrior
 
    ;; latex
    texlive
@@ -241,6 +305,7 @@
    (list gdb "debug")
    valgrind
    perf-nonfree
+   sysprof-new
    cpupower-nonfree
 
    dtc
@@ -278,46 +343,54 @@
 
    glade3
 
-   d-feet
+   d-spy
 
    spirv-tools
    vulkan-tools
    vulkan-loader
    vulkan-headers
-   shaderc-2022
+   ;; shaderc-upstream
    glslang
    mesa-utils
 
+   ;; user mode amdgpu debugger
+   umr
+
    ;; fpga
    gtkwave
-   python-amaranth
-   python-amaranth-boards
-   python-amaranth-stdio
-   python-amaranth-soc
+   ;; vup:python-amaranth
+   ;; vup:python-amaranth-boards
+   ;; vup:python-amaranth-stdio
+   ;; vup:python-amaranth-soc
    yosys-git
-   nextpnr
+   ;; nextpnr ; tmp
    trellis
    icestorm
-   symbiyosys
+   vup:symbiyosys
 
 
    ra-multiplex
 
 
    ;; lang
-   go-1.19
+   go-1.21
    swi-prolog
-   ;; rust-nightly
+   ;; rust
+   ;; (list rust "cargo")
    rust-nightly
-   ;; (list rust-nightly "doc")
-   clang-14
-   clang-toolchain-14
-   clang-runtime-14
+   (list rust-nightly "cargo")
+   (list rust-nightly "tools")
+   (list rust-nightly "rust-src")
+   (list rust-nightly "doc")
+   clang-17
+   clang-toolchain-17
+   clang-runtime-17
    ;; (list clang-14 "debug")
    libomp
    ;; (list clang-12 "extra") gone?
    lld
    gcc
+   (list gcc "lib")
    gcc-toolchain ; keep this in sync withThe system toolchain, otherwise linking shit sometime breaks (fuck c++) 
    (list gcc-toolchain "debug") ; keep this in sync withThe system toolchain, otherwise linking shit sometime breaks (fuck c++)
    ;; binutils-gold
@@ -338,35 +411,35 @@
 
 (define-public python-packages
   (list
-    ;; python
+   ;; python
    python-distro
+   python-librosa
    python-wrapper
    python-pyquery
-   python-flameprof
+   vup:python-flameprof
    python-pyyaml
    python-sortedcontainers
    python-toposort
    python-jedi
    python-lz4
-   ;; python-astropy
+   ;; python-astropy ; broken
    python-epc
-    ;; python-chipsec ; broken on linux >= 5.7.0
-   ;; python-varname
+   ;; python-chipsec ; broken on linux >= 5.7.0
    python-pandas
    python-tqdm
-   python-scipy-fixed
-   ;; python-demjson
+   python-scipy
+   vup:python-demjson
    python-matplotlib
-   ;; python-quadpy ; broken
+   vup:python-quadpy
    python-fitsio
-   python-colorhash
-   ;; python-pint
+   vup:python-colorhash
+   vup:python-pint
    python-requests
    python-ruamel.yaml
    python-toml
    python-xmltodict
-   ;; python-pikepdf
-   python-bluepy
+   ;; python-pikepdf broken
+   vup:python-bluepy
    python-pypng
    python-flask
    ;; python-solaredge-modbus
@@ -374,25 +447,25 @@
    ;; python-joblib
    ;; python-intelhex
    python-networkx
-   python-shapely-fixed
+   python-shapely
    python-pyflakes
-   python-influxdb
+   ;; python-influxdb
    python-bcrypt
    python-sphinx-rtd-theme
-    ;; python-descartes
+   vup:python-descartes
    guix:jupyter
-    ;; vup:python-nbconvert-new
-   python-huffman
+   ;; vup:python-nbconvert-new
+   vup:python-huffman
    python-dill
    python-multiprocess
-   python-loky
+   vup:python-loky
    ;; python-billiard
-   ;; python-line-profiler - broken
+   vup:python-line-profiler                 ; - broken
    python-tables
-   python-pmbootstrap
+   vup:pmbootstrap
    ;; pypy3 - broken
    python-dbus
-   python-mypy
+   ;; python-mypy
    python-pytest
    python-pytest-forked
    python-pytest-xdist
@@ -401,6 +474,9 @@
    python-imageio
    python-numba
    python-zstandard
+   python-lmfit
+   python-jax
+   python-jaxopt
    ;; python-plotly
    python-zarr))
 
@@ -427,7 +503,7 @@
    libusb
    eudev
    boost
-   fuse
+   ;; fuse
    cmake
    expat
    cereal
@@ -487,7 +563,7 @@
    nss
    libxcomposite
    cups
-   pipewire-0.3
+   pipewire
    bison
    flex))
 

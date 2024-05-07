@@ -1,0 +1,30 @@
+diff -Naur a/Makefile b/Makefile
+--- a/Makefile	2024-03-26 23:22:50.000000000 +0100
++++ b/Makefile	2024-04-03 17:25:28.110772701 +0200
+@@ -939,7 +939,7 @@
+ ifdef CONFIG_LTO_CLANG
+ ifdef CONFIG_LTO_CLANG_THIN
+ CC_FLAGS_LTO	:= -flto=thin -fsplit-lto-unit
+-KBUILD_LDFLAGS	+= --thinlto-cache-dir=$(extmod_prefix).thinlto-cache
++KBUILD_LDFLAGS	+= --thinlto-cache-dir=/tmp/$(extmod_prefix).thinlto-cache
+ else
+ CC_FLAGS_LTO	:= -flto
+ endif
+@@ -1471,7 +1471,7 @@
+ # Directories & files removed with 'make clean'
+ CLEAN_FILES += vmlinux.symvers modules-only.symvers \
+ 	       modules.builtin modules.builtin.modinfo modules.nsdeps \
+-	       compile_commands.json .thinlto-cache rust/test \
++	       compile_commands.json /tmp/.thinlto-cache rust/test \
+ 	       rust-project.json .vmlinux.objs .vmlinux.export.c
+ 
+ # Directories & files removed with 'make mrproper'
+@@ -1775,7 +1775,7 @@
+ 
+ clean-dirs := $(KBUILD_EXTMOD)
+ clean: rm-files := $(KBUILD_EXTMOD)/Module.symvers $(KBUILD_EXTMOD)/modules.nsdeps \
+-	$(KBUILD_EXTMOD)/compile_commands.json $(KBUILD_EXTMOD)/.thinlto-cache
++	$(KBUILD_EXTMOD)/compile_commands.json /tmp/$(KBUILD_EXTMOD)/.thinlto-cache
+ 
+ PHONY += prepare
+ # now expand this into a simple variable to reduce the cost of shell evaluations

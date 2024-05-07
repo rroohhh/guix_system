@@ -8,8 +8,15 @@
   #:use-module (gnu services shepherd)
   #:use-module (gnu system mapped-devices)
   #:use-module (gnu packages file-systems)
+  #:use-module (gnu packages linux)
+  #:use-module (gnu packages pkg-config)
+  #:use-module (gnu packages admin)
+  #:use-module (gnu packages autotools)
+  #:use-module (gnu packages llvm)
   #:use-module (guix gexp)
   #:use-module (guix packages)
+  #:use-module (guix utils)
+  #:use-module (guix modules)
   #:use-module (guix records)
   #:use-module (guix download)
   #:use-module (guix build-system gnu)
@@ -30,91 +37,140 @@
             %zfs-zvol-dependency
             zfs-with-vup-kernel))
 
-(define-public zfs-auto-snapshot
+(define-public zfs-2.2
   (package
-    (name "zfs-auto-snapshot")
-    (version "1.2.4")
-    (source
-      (origin
-        (method url-fetch)
-        (uri (string-append
-               "https://github.com/zfsonlinux/zfs-auto-snapshot/archive/upstream/"
-               version ".tar.gz"))
-        (sha256
-          (base32 "16ry1w43i44xc67gr73x6fa48ninfhqxr498ad4m3kya93vp2zrh"))))
-    (build-system gnu-build-system)
-    (inputs
-      ;; Note: if you are inheriting from the above zfs package in order
-      ;; to provide a specific stable kernel version, you should also
-      ;; inherit this package and replace the sole input below.
-      `(("zfs" ,zfs)))
-    (arguments
-      `(#:tests? #f ; No tests
-        #:phases
-        (modify-phases %standard-phases
-          (delete 'configure)
-          (delete 'build)
-          ;; Guix System may not have a traditional cron system, but
-          ;; the cron scripts installed by this package are convenient
-          ;; to use as targets for an mcron job specification, so make
-          ;; sure they can be run in-store.
-          (add-before 'install 'fix-scripts
-            (lambda* (#:key outputs inputs #:allow-other-keys)
-              (let* ((out                (assoc-ref outputs "out"))
-                     (zfs-auto-snapshot  (string-append
-                                           out
-                                           "/sbin/zfs-auto-snapshot"))
-                     (zfs-package        (assoc-ref inputs "zfs"))
-                     (zpool              (string-append
-                                           zfs-package
-                                           "/sbin/zpool"))
-                     (zfs                (string-append
-                                           zfs-package
-                                           "/sbin/zfs")))
-                (substitute* '("etc/zfs-auto-snapshot.cron.daily"
-                               "etc/zfs-auto-snapshot.cron.frequent"
-                               "etc/zfs-auto-snapshot.cron.hourly"
-                               "etc/zfs-auto-snapshot.cron.monthly"
-                               "etc/zfs-auto-snapshot.cron.weekly")
-                  (("zfs-auto-snapshot")
-                   zfs-auto-snapshot))
-                (substitute* "src/zfs-auto-snapshot.sh"
-                  (("LC_ALL=C zfs list")
-                   (string-append "LC_ALL=C " zfs " list"))
-                  (("LC_ALL=C zpool status")
-                   (string-append "LC_ALL=C " zpool " status"))
-                  (("zfs snapshot")
-                   (string-append zfs " snapshot"))
-                  (("zfs destroy")
-                   (string-append zfs " destroy"))))))
-          ;; Provide DESTDIR and PREFIX on make command.
-          (replace 'install
-            (lambda* (#:key outputs #:allow-other-keys)
-              (let ((out (assoc-ref outputs "out")))
-                (invoke "make" "install"
-                        "PREFIX="
-                        (string-append "DESTDIR=" out)))
-              #t)))))
-    (home-page "https://github.com/zfsonlinux/zfs-auto-snapshot")
-    (synopsis "Automatically create, rotate, and destroy periodic ZFS snapshots")
-    (description
-      "An alternative implementation of the zfs-auto-snapshot service for Linux
-that is compatible with zfs-linux (now OpenZFS) and zfs-fuse.
+   (inherit zfs)
+   (version "2.2.4")
+   (source
+    (origin
+     (patches (list "zfs_no_init_conf.patch"))
+     (method url-fetch)
+     (uri (string-append "https://github.com/openzfs/zfs/releases"
+                         "/download/zfs-" version
+                         "/zfs-" version ".tar.gz"))
+     (sha256
+      (base32 "1h0yqchirzsn2gll1w2gclb13hr8511z67lf85cigm43frgr144p"))))
 
-On Guix System, you will need to invoke the included shell scripts as @code{job}
-definitions in your @code{operating-system} declaration.")
-    (license #f)))
+   (native-inputs (list autoconf automake libtool pkg-config clang-17 lld-17))
+   (arguments
+    (substitute-keyword-arguments
+      (package-arguments zfs)
+           ;; Source patching phases are broken up into discrete steps to allow
+           ;; future versions to discard individual phases without having to
+           ;; discard all source patching.
+      ((#:phases phases)
+       #~(modify-phases #$phases
+           ;; (add-after 'unpack 'set-llvm
+           ;;   (lambda *_
+           ;;     (setenv "LLVM" "1")
+           ;;     (setenv "CC" "clang")))
+           (replace 'really-configure
+            (lambda* (#:key inputs #:allow-other-keys)
+              (substitute* "configure"
+                (("-/bin/sh") (string-append "-" (which "sh"))))
+              (setenv "KBUILD_LDFLAGS=" "--thinlto-cache-dir=/tmp/.thinlto-cache")
+              (invoke "./configure"
+                      "KERNEL_LLVM=1"
+                      "KERNEL_CC=clang"
+                      "--with-config=all"
+                      (string-append "--prefix=" #$output)
+                      (string-append "--with-dracutdir=" #$output
+                                     "/lib/dracut")
+                      (string-append "--with-udevdir=" #$output
+                                     "/lib/udev")
+                      (string-append "--with-mounthelperdir=" #$output
+                                     "/sbin")
+                      (string-append "--with-linux="
+                                     (search-input-directory
+                                      inputs
+                                      "lib/modules/build")))))
+           (add-after 'patch-source 'reconf
+            (lambda* (#:key inputs #:allow-other-keys)
+              (invoke #$(file-append autoconf "/bin/autoreconf") "-vfi")))
+           (replace 'patch-source
+             (lambda* (#:key inputs #:allow-other-keys)
+               ;; New feature "compatibility=" in 2.1.0.
+               ;; This feature looks up in two locations:
+               ;;   /etc/zfs/compatibility.d/
+               ;;   /usr/share/zfs/compatibility.d/
+               ;; The first is intended for system-specific compatibility
+               ;; sets, while the second is what is installed with the
+               ;; OpenZFS package, so use the absolute path for the first
+               ;; (which requires patching in the file) and the store path
+               ;; for the second (which it gets by default).
+               (substitute* "include/sys/fs/zfs.h"
+                                              (("#define\tZPOOL_SYSCONF_COMPAT_D.*$")
+                                               ;; Use absolute path.
+                                               "#define\tZPOOL_SYSCONF_COMPAT_D\t\"/etc/zfs/compatibility.d\"\n"))
+               ;; Also update the manual, which uses absolute paths, so that
+               ;; /usr/share/zfs/compatibility.d/ is referred via the store.
+               (substitute* '("man/man7/zpoolprops.7"
+                              "man/man7/zpool-features.7")
+                  (("/usr/share/zfs/compatibility.d")
+                   (string-append #$output "/share/zfs/compatibility.d")))
+               (substitute* "contrib/Makefile.am"
+                 ;; This is not configurable nor is its hard-coded /usr prefix.
+                 ((".*initramfs.*") ""))
+               (substitute* "lib/libzfs/os/linux/libzfs_util_os.c"
+                   ;; Use path to /gnu/store/*-kmod in actual path that is
+                   ;; exec'ed.
+                   (("\"/sbin/modprobe\"")
+                    (string-append "\""
+                                   (search-input-file inputs "/bin/modprobe")
+                                   "\""))
+                                              ;; Just use 'modprobe' in message to user, since Guix
+                                              ;; does not have a traditional /sbin/
+                   (("'/sbin/modprobe ") "'modprobe "))
+               (substitute* "module/os/linux/zfs/zfs_ctldir.c"
+                    (("/usr/bin/env\", \"umount")
+                     (string-append (search-input-file inputs "/bin/umount")
+                                    "\", \"-n"))
+                    (("/usr/bin/env\", \"mount")
+                     (string-append (search-input-file inputs "/bin/mount")
+                                    "\", \"-n")))
+               (substitute* "lib/libzfs/os/linux/libzfs_mount_os.c"
+                    (("/bin/mount") (search-input-file inputs "/bin/mount"))
+                    (("/bin/umount") (search-input-file inputs "/bin/umount")))
+               (substitute* "lib/libshare/os/linux/nfs.c"
+                    (("/usr/sbin/exportfs")
+                     (search-input-file inputs "/sbin/exportfs")))
+               (substitute* "config/zfs-build.m4"
+                    (("\\$sysconfdir/init.d")
+                     (string-append #$output "/etc/init.d"))
+                    (("/etc/bash_completion.d")
+                     (string-append #$output "/etc/bash_completi.on.d")))
+               (substitute* '("etc/Makefile.am"
+                              "cmd/zpool/Makefile.am"
+                              "cmd/zed/zed.d/Makefile.am"
+                              "scripts/Makefile.am")
+                    (("\\$\\(sysconfdir)") (string-append #$output "/etc")))
+               (substitute* "udev/vdev_id"
+                    (("PATH=/bin:/sbin:/usr/bin:/usr/sbin")
+                     (string-append "PATH="
+                                    (dirname (which "chmod")) ":"
+                                    (dirname (which "grep")) ":"
+                                    (dirname (which "sed")) ":"
+                                    (dirname (which "gawk")))))
+               (substitute* "contrib/pyzfs/Makefile.am"
+                    ((".*install-lib.*") ""))
+               (substitute* '("Makefile.am" "Makefile.in")
+                    (("\\$\\(prefix)/src") (string-append #$output:src "/src")))
+               (substitute* (find-files "udev/rules.d/" ".rules.in$")
+                    (("/sbin/modprobe")
+                     (search-input-file inputs "/bin/modprobe")))))))))))
+                       
 
 (define-record-type* <zfs-configuration>
   zfs-configuration
   make-zfs-configuration
   zfs-configuration?
   ;; linux-libre kernel you want to compile the base-zfs module for.
-  (kernel                     zfs-configuration-kernel)
+  (kernel                     zfs-configuration-kernel
+                              (default linux-for-modules))
   ;; the OpenZFS package that will be modified to compile for the
   ;; given kernel.
   (base-zfs                   zfs-configuration-base-zfs
-                              (default zfs))
+                              (default zfs-2.2))
   ;; the zfs-auto-snapshot package that will be modified to compile
   ;; for the given kernel.
   (base-zfs-auto-snapshot     zfs-configuration-base-zfs-auto-snapshot
@@ -177,27 +233,25 @@ definitions in your @code{operating-system} declaration.")
          (scheme-modules  `((srfi srfi-1)
                             (srfi srfi-34)
                             (srfi srfi-35)
-                            (rnrs io ports)
+                            (gnu build file-systems)
                             ,@%default-modules)))
 
       (list (shepherd-service
-        (provision '(zfs-mount))
-        (requirement `(root-file-system
-                       kernel-module-loader
-                       udev))
-        (documentation "Scans for and imports ZFS pools.")
-        (modules scheme-modules)
-        (start #~(lambda _
-                    (with-output-to-file "/dev/console"
-                       (lambda ()
-                        (with-input-from-file "/dev/console"
-                           (lambda ()
-                             (invoke #$zpool "import" "-a" "-N")
-                             (usleep 100)
-                             (invoke #$zfs "mount" "-a" "-l")))))))
-        (stop #~(lambda _
-                  (chdir "/")
-                  (invoke #$zfs "unmount" "-a" "-f")))))))
+             (provision '(zfs-mount))
+             (requirement `(root-file-system
+                            kernel-module-loader
+                            udev))
+             (documentation "Scans for and imports ZFS pools.")
+             (modules scheme-modules)
+             (start
+              (with-imported-modules (source-module-closure
+                                      '((gnu build file-systems)))
+                #~(lambda _
+                    (invoke #$zpool "import" "-a" "-N")
+                    (system*/tty #$zfs "mount" "-a" "-l"))))
+             (stop #~(lambda _
+                       (chdir "/")
+                       (invoke #$zfs "unmount" "-a" "-f")))))))
 
 (define (zfs-mcron-auto-snapshot-jobs conf)
   (let* ((user-auto-snapshot-keep      (zfs-configuration-auto-snapshot-keep conf))
@@ -258,9 +312,11 @@ definitions in your @code{operating-system} declaration.")
                            (compose list make-zfs-package))))
     (description "Installs ZFS, an advanced filesystem and volume manager.")))
 
+
+
 (define zfs-with-vup-kernel
   (package
-    (inherit zfs)
+    (inherit zfs-2.2)
     (arguments
-      `(#:linux ,linux-nonfree/extra_config
-                      ,@(package-arguments zfs)))))
+      `(#:linux ,linux-nonfree/extra_config-x86
+        ,@(package-arguments zfs-2.2)))))

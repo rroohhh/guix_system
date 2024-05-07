@@ -2,6 +2,8 @@
   #:use-module (rnrs lists)
   #:use-module (ice-9 match)
   #:use-module (home config)
+  #:use-module (home hy3)
+  #:use-module (config network)
   #:use-module (misc util)
   #:use-module (vup home i3)
   #:use-module (vup hwinfo)
@@ -11,6 +13,8 @@
   #:use-module (vup rust-apps)
   #:use-module (vup misc)
   #:use-module (vup atuin)
+  #:use-module (rosenthal packages wm)
+  #:use-module (home lights)
   #:use-module (guix gexp)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages rust-apps)
@@ -23,255 +27,129 @@
   #:use-module (gnu packages xorg)
   #:use-module (gnu packages pulseaudio)
   #:use-module (gnu packages linux)
-  #:use-module (gnu packages irc))
+  #:use-module (gnu packages telegram)
+  #:use-module (gnu packages irc)
+  #:use-module (gnu packages messaging)
+  #:use-module (gnu packages guile)
+  #:use-module (guix packages)
+  #:use-module (guix download))
 
 (define-public emacs-terminfo
   (computed-file "terminfo"
-    #~(let ((terminfo-src #$(plain-file "terminfo-24bit.src" "xterm-24bits|xterm with 24-bit direct color mode,
+                 #~(let ((terminfo-src #$(plain-file "terminfo-24bit.src" "xterm-24bits|xterm with 24-bit direct color mode,
   use=xterm-256color,
   setb24=\\E[48;2;%p1%{65536}%/%d;%p1%{256}%/%{255}%&%d;%p1%{255}%&%dm,
   setf24=\\E[38;2;%p1%{65536}%/%d;%p1%{256}%/%{255}%&%d;%p1%{255}%&%dm,"))
-            (out (string-append #$output "")))
-        (use-modules (guix build utils))
-        (mkdir-p out)
-        (apply system* (list #$(file-append ncurses "/bin/tic") "-x" "-o" out terminfo-src)))
-    #:options
-    '(#:local-build? #t
-      #:modules ((guix build utils)))))
+                         (out (string-append #$output "")))
+                     (use-modules (guix build utils))
+                     (mkdir-p out)
+                     (apply system* (list #$(file-append ncurses "/bin/tic") "-x" "-o" out terminfo-src)))
+                 #:options
+                 '(#:local-build? #t
+                   #:modules ((guix build utils)))))
 
 
 (define-public alacritty-config
-  (plain-file "alacritty.yml" (string-append "env:
-  TERM: xterm-256color
-  WINIT_HIDPI_FACTOR: \"1.0\"
-  WINIT_X11_SCALE_FACTOR: \"1.0\"
+  (plain-file "alacritty.toml" (string-append "live_config_reload = true
 
-window:
-  dimensions:
-    columns: 0
-    lines: 0
-  padding:
-    x: 2
-    y: 2
-  dynamic_padding: false
-  decorations: full
+[env]
+TERM = \"xterm-256color\"
+WINIT_HIDPI_FACTOR = \"1.0\"
+WINIT_X11_SCALE_FACTOR = \"1.0\"
 
-scrolling:
-  history: 10000
-  multiplier: 3
-  auto_scroll: false
+[window]
+decorations = \"full\"
+dynamic_padding = false
 
-tabspaces: 4
+[window.dimensions]
+columns = 0
+lines = 0
 
-font:
-  normal:
-    family: " monospace-font "
-    style: Regular
-  bold:
-    family: " monospace-font "
-    style: Bold
-  italic:
-    family: " monospace-font "
-    style: Italic
-#  size: 11.5
-  size: 10.0
-  offset:
-    x: 0
-    y: 0
-  glyph_offset:
-    x: 0
-    y: 0
-  use_thin_strokes: true
+[window.padding]
+x = 2
+y = 2
 
-debug:
-    render_timer: false
-    persistent_logging: false
+[scrolling]
+history = 10000
+multiplier = 3
 
-draw_bold_text_with_bright_colors: false
+[font]
+size = 10.0
 
-colors:
-  cursor:
-    cursor: " (theme red) "
-    text: " (theme fg) "
-  primary:
-    background: " (theme bg) "
-    foreground: " (theme fg) "
-  normal:
-    black:   " (theme black) "
-    red:     " (theme red) "
-    green:   " (theme green) "
-    yellow:  " (theme yellow) "
-    blue:    " (theme blue) "
-    magenta: " (theme magenta) "
-    cyan:    " (theme cyan) "
-    white:   " (theme white) "
-  bright:
-    black:   " (theme bright black) "
-    red:     " (theme bright red) "
-    green:   " (theme bright green) "
-    yellow:  " (theme bright yellow) "
-    blue:    " (theme bright blue) "
-    magenta: " (theme bright magenta) "
-    cyan:    " (theme bright cyan) "
-    white:   " (theme bright white) "
-  indexed_colors: []
-bell:
-  animation: EaseOutExpo
-  duration: 0
-  color: '0xffffff'
-background_opacity: 1.0
-mouse_bindings:
-  - { mouse: Middle, action: PasteSelection }
-mouse:
-  double_click: { threshold: 300 }
-  triple_click: { threshold: 300 }
-  hide_when_typing: true
-selection:
-  semantic_escape_chars: \",│`|:\\\"' ()[]{}<>\"
-  save_to_clipboard: false
-dynamic_title: true
+[font.bold]
+family = \"" monospace-font "\"
+style = \"Bold\"
 
-cursor:
-  style: Block
-  unfocused_hollow: true
-live_config_reload: true
+[font.glyph_offset]
+x = 0
+y = 0
 
-#shell:
-#  program: /bin/bash
-#  args:
-#    - --login
+[font.italic]
+family = \"" monospace-font "\"
+style = \"Italic\"
 
-alt_send_esc: true
-key_bindings:
-  - { key: Space,    mods: Shift|Control,           chars: \"\\x00\"       }
-  - { key: Return,   mods: Control, chars: \"\x1b[27;5;13~\"               }
-  - { key: Paste,                   action: Paste                          }
-  - { key: Copy,                    action: Copy                           }
-  - { key: L,        mods: Control, action: ClearLogNotice                 }
-  - { key: L,        mods: Control, chars: \"\x0c\"                        }
-  - { key: Home,                    chars: \"\x1bOH\",   mode: AppCursor   }
-  - { key: Home,                    chars: \"\x1b[H\",   mode: ~AppCursor  }
-  - { key: End,                     chars: \"\x1bOF\",   mode: AppCursor   }
-  - { key: End,                     chars: \"\x1b[F\",   mode: ~AppCursor  }
-  - { key: PageUp,   mods: Shift,   chars: \"\x1b[5;2~\"                   }
-  - { key: PageUp,   mods: Control, chars: \"\x1b[5;5~\"                   }
-  - { key: PageUp,                  chars: \"\x1b[5~\"                     }
-  - { key: PageDown, mods: Shift,   chars: \"\x1b[6;2~\"                   }
-  - { key: PageDown, mods: Control, chars: \"\x1b[6;5~\"                   }
-  - { key: PageDown,                chars: \"\x1b[6~\"                     }
-  - { key: Tab,      mods: Shift,   chars: \"\x1b[Z\"                      }
-  - { key: Back,                    chars: \"\x7f\"                        }
-  - { key: Back,     mods: Alt,     chars: \"\x1b\x7f\"                    }
-  - { key: Insert,                  chars: \"\x1b[2~\"                     }
-  - { key: Delete,                  chars: \"\x1b[3~\"                     }
-  - { key: Left,     mods: Shift,   chars: \"\x1b[1;2D\"                   }
-  - { key: Left,     mods: Control, chars: \"\x1b[1;5D\"                   }
-  - { key: Left,     mods: Alt,     chars: \"\x1b[1;3D\"                   }
-  - { key: Left,                    chars: \"\x1b[D\",   mode: ~AppCursor  }
-  - { key: Left,                    chars: \"\x1bOD\",   mode: AppCursor   }
-  - { key: Right,    mods: Shift,   chars: \"\x1b[1;2C\"                   }
-  - { key: Right,    mods: Control, chars: \"\x1b[1;5C\"                   }
-  - { key: Right,    mods: Alt,     chars: \"\x1b[1;3C\"                   }
-  - { key: Right,                   chars: \"\x1b[C\",   mode: ~AppCursor  }
-  - { key: Right,                   chars: \"\x1bOC\",   mode: AppCursor   }
-  - { key: Up,       mods: Shift,   chars: \"\x1b[1;2A\"                   }
-  - { key: Up,       mods: Control, chars: \"\x1b[1;5A\"                   }
-  - { key: Up,       mods: Alt,     chars: \"\x1b[1;3A\"                   }
-  - { key: Up,                      chars: \"\x1b[A\",   mode: ~AppCursor  }
-  - { key: Up,                      chars: \"\x1bOA\",   mode: AppCursor   }
-  - { key: Down,     mods: Shift,   chars: \"\x1b[1;2B\"                   }
-  - { key: Down,     mods: Control, chars: \"\x1b[1;5B\"                   }
-  - { key: Down,     mods: Alt,     chars: \"\x1b[1;3B\"                   }
-  - { key: Down,                    chars: \"\x1b[B\",   mode: ~AppCursor  }
-  - { key: Down,                    chars: \"\x1bOB\",   mode: AppCursor   }
-  - { key: F1,                      chars: \"\x1bOP\"                      }
-  - { key: F2,                      chars: \"\x1bOQ\"                      }
-  - { key: F3,                      chars: \"\x1bOR\"                      }
-  - { key: F4,                      chars: \"\x1bOS\"                      }
-  - { key: F5,                      chars: \"\x1b[15~\"                    }
-  - { key: F6,                      chars: \"\x1b[17~\"                    }
-  - { key: F7,                      chars: \"\x1b[18~\"                    }
-  - { key: F8,                      chars: \"\x1b[19~\"                    }
-  - { key: F9,                      chars: \"\x1b[20~\"                    }
-  - { key: F10,                     chars: \"\x1b[21~\"                    }
-  - { key: F11,                     chars: \"\x1b[23~\"                    }
-  - { key: F12,                     chars: \"\x1b[24~\"                    }
-  - { key: F1,       mods: Shift,   chars: \"\x1b[1;2P\"                   }
-  - { key: F2,       mods: Shift,   chars: \"\x1b[1;2Q\"                   }
-  - { key: F3,       mods: Shift,   chars: \"\x1b[1;2R\"                   }
-  - { key: F4,       mods: Shift,   chars: \"\x1b[1;2S\"                   }
-  - { key: F5,       mods: Shift,   chars: \"\x1b[15;2~\"                  }
-  - { key: F6,       mods: Shift,   chars: \"\x1b[17;2~\"                  }
-  - { key: F7,       mods: Shift,   chars: \"\x1b[18;2~\"                  }
-  - { key: F8,       mods: Shift,   chars: \"\x1b[19;2~\"                  }
-  - { key: F9,       mods: Shift,   chars: \"\x1b[20;2~\"                  }
-  - { key: F10,      mods: Shift,   chars: \"\x1b[21;2~\"                  }
-  - { key: F11,      mods: Shift,   chars: \"\x1b[23;2~\"                  }
-  - { key: F12,      mods: Shift,   chars: \"\x1b[24;2~\"                  }
-  - { key: F1,       mods: Control, chars: \"\x1b[1;5P\"                   }
-  - { key: F2,       mods: Control, chars: \"\x1b[1;5Q\"                   }
-  - { key: F3,       mods: Control, chars: \"\x1b[1;5R\"                   }
-  - { key: F4,       mods: Control, chars: \"\x1b[1;5S\"                   }
-  - { key: F5,       mods: Control, chars: \"\x1b[15;5~\"                  }
-  - { key: F6,       mods: Control, chars: \"\x1b[17;5~\"                  }
-  - { key: F7,       mods: Control, chars: \"\x1b[18;5~\"                  }
-  - { key: F8,       mods: Control, chars: \"\x1b[19;5~\"                  }
-  - { key: F9,       mods: Control, chars: \"\x1b[20;5~\"                  }
-  - { key: F10,      mods: Control, chars: \"\x1b[21;5~\"                  }
-  - { key: F11,      mods: Control, chars: \"\x1b[23;5~\"                  }
-  - { key: F12,      mods: Control, chars: \"\x1b[24;5~\"                  }
-  - { key: F1,       mods: Alt,     chars: \"\x1b[1;6P\"                   }
-  - { key: F2,       mods: Alt,     chars: \"\x1b[1;6Q\"                   }
-  - { key: F3,       mods: Alt,     chars: \"\x1b[1;6R\"                   }
-  - { key: F4,       mods: Alt,     chars: \"\x1b[1;6S\"                   }
-  - { key: F5,       mods: Alt,     chars: \"\x1b[15;6~\"                  }
-  - { key: F6,       mods: Alt,     chars: \"\x1b[17;6~\"                  }
-  - { key: F7,       mods: Alt,     chars: \"\x1b[18;6~\"                  }
-  - { key: F8,       mods: Alt,     chars: \"\x1b[19;6~\"                  }
-  - { key: F9,       mods: Alt,     chars: \"\x1b[20;6~\"                  }
-  - { key: F10,      mods: Alt,     chars: \"\x1b[21;6~\"                  }
-  - { key: F11,      mods: Alt,     chars: \"\x1b[23;6~\"                  }
-  - { key: F12,      mods: Alt,     chars: \"\x1b[24;6~\"                  }
-  - { key: F1,       mods: Super,   chars: \"\x1b[1;3P\"                   }
-  - { key: F2,       mods: Super,   chars: \"\x1b[1;3Q\"                   }
-  - { key: F3,       mods: Super,   chars: \"\x1b[1;3R\"                   }
-  - { key: F4,       mods: Super,   chars: \"\x1b[1;3S\"                   }
-  - { key: F5,       mods: Super,   chars: \"\x1b[15;3~\"                  }
-  - { key: F6,       mods: Super,   chars: \"\x1b[17;3~\"                  }
-  - { key: F7,       mods: Super,   chars: \"\x1b[18;3~\"                  }
-  - { key: F8,       mods: Super,   chars: \"\x1b[19;3~\"                  }
-  - { key: F9,       mods: Super,   chars: \"\x1b[20;3~\"                  }
-  - { key: F10,      mods: Super,   chars: \"\x1b[21;3~\"                  }
-  - { key: F11,      mods: Super,   chars: \"\x1b[23;3~\"                  }
-  - { key: F12,      mods: Super,   chars: \"\x1b[24;3~\"                  }
-  - { key: NumpadEnter,             chars: \"\n\"                          }")))
+[font.normal]
+family = \"" monospace-font "\"
+style = \"Regular\"
 
-(define-public guix-config
-  (scheme-file
-   "channels.scm"
-   #~(list (channel
-             (name 'guix)
-             (url "https://git.savannah.gnu.org/git/guix.git")
-             (branch "master"))
-           (channel
-             (name 'vup)
-             (url "https://github.com/rroohhh/guix_packages.git"))
-           (channel
-             (name 'guix-gaming-games)
-             (url "https://gitlab.com/guix-gaming-channels/games.git")
-             (introduction
-              (make-channel-introduction
-               "c23d64f1b8cc086659f8781b27ab6c7314c5cca5"
-               (openpgp-fingerprint
-                "50F3 3E2E 5B0C 3D90 0424  ABE8 9BDC F497 A4BB CC7F"))))
-           (channel
-             (name 'nonguix)
-             (url "https://gitlab.com/nonguix/nonguix")
-             (introduction
-              (make-channel-introduction
-               "897c1a470da759236cc11798f4e0a5f7d4d59fbc"
-               (openpgp-fingerprint
-                "2A39 3FFF 68F4 EF7A 3D29  12AF 6F51 20A0 22FB B2D5")))))))
+[font.offset]
+x = 0
+y = 0
+
+[bell]
+animation = \"EaseOutExpo\"
+color = \"0xffffff\"
+duration = 0
+
+[colors]
+draw_bold_text_with_bright_colors = false
+
+[colors.cursor]
+cursor = " (theme red) "
+text = " (theme fg) "
+
+[colors.primary]
+background = " (theme bg) "
+foreground = " (theme fg) "
+
+[colors.normal]
+black = " (theme black) "
+blue = " (theme blue) "
+cyan = " (theme cyan) "
+green = " (theme green) "
+magenta = " (theme magenta) "
+red = " (theme red) "
+white = " (theme white) "
+yellow = " (theme yellow) "
+
+[colors.bright]
+black = " (theme black) "
+blue = " (theme blue) "
+cyan = " (theme cyan) "
+green = " (theme green) "
+magenta = " (theme magenta) "
+red = " (theme red) "
+white = " (theme white) "
+yellow = " (theme yellow) "
+
+[cursor]
+style = \"Block\"
+unfocused_hollow = true
+
+[debug]
+persistent_logging = false
+render_timer = false
+
+[mouse]
+hide_when_typing = true
+
+[[mouse.bindings]]
+action = \"PasteSelection\"
+mouse = \"Middle\"
+
+[selection]
+save_to_clipboard = false
+semantic_escape_chars = \",│`|:\\\"' ()[]{}<>\"")))
 
 
 (define-public ideavim-config
@@ -320,6 +198,9 @@ bind -n M-i kill-pane
 bind -n M-w kill-window
 bind -n M-c new-window
 
+bind-key    -T copy-mode-vi Down                    send-keys -X scroll-down
+bind-key    -T copy-mode-vi Up                    send-keys -X scroll-up
+
 bind r source-file ~/.tmux.conf
 
 bind-key -n M-" (keys* left) " select-pane -L
@@ -364,15 +245,32 @@ setw -g window-status-format \"#[fg=colour246,bg=colour237] #I #[fg=colour246
 
 setw -g window-status-current-format \"#[fg=colour237,bg=colour214,nobold,nounderscore,noitalics]#[fg=colour235,bg=colour214] #I #[fg=colour235,bg=colour214] #W #[fg=colour214,bg=colour237,nobold,nounderscore,noitalics]\"")))
 
+(define-public gitconfig-visions
+  (plain-file "gitconfig-visions" "[user]
+        email = robin.heinemann@kip.uni-heidelberg.de
+        name = Robin Heinemann
+"))
+
 (define-public gitconfig
-  (plain-file "gitconfig" "[user]
+  (mixed-text-file "gitconfig" "[user]
         email = robin.ole.heinemann@gmail.com
         name = Robin Ole Heinemann
 [pull]
 ff = only
 
 [init]
-defaultBranch = main"))
+defaultBranch = main
+
+[includeIf \"gitdir:/data/study/bachelor/\"]
+    path = " gitconfig-visions "
+
+[url \"ssh://git@git.froheiyd.de:2222/\"]
+    insteadOf = https://git.froheiyd.de/
+"))
+
+;; [url \"git@github.com:\"]
+;; insteadOf = https://github.com/
+
 
 (define-public wofi-config
   (plain-file "wofi" "key_down=N
@@ -383,22 +281,269 @@ key_up=T"))
 alias swaymsg=" (file-append sway "/bin/swaymsg") "
 " (read-file-as-string "home/window_switch.sh")))
 
+
+(define-public hyprland-config
+  (apply mixed-text-file `("hyprland.conf" "
+monitor=desc:AU Optronics 0x573D,preferred,1920x1440,1.0
+monitor=desc:Fujitsu Siemens Computers GmbH A17-3A YE2P263316,preferred,4480x0,1.0,transform,3
+monitor=desc:Lenovo Group Limited T27hv-20 V306V9KL,preferred,1920x0,1.0
+monitor=desc:Eizo Nanao Corporation EV2313W 42302061,preferred,0x0,1.0
+monitor=desc:Dell Inc. DELL U2711 G606T11C08AL,modeline 241.5 2560 2608 2640 2720 1440 1443 1448 1481 +HSync -VSync,1920x0,1.0
+monitor=,preferred,auto,1.0
+
+$terminal = " ,(file-append alacritty "/bin/alacritty") "
+$menu = " ,(file-append wofi "/bin/wofi") " --show run
+
+env = XCURSOR_SIZE,32
+
+plugin = " ,(file-append hyprland-hy3 "/lib/libhy3.so") "
+
+plugin {
+  hy3 {
+    no_gaps_when_only = 2
+    autotile {
+      enable = true
+    }
+    tabs {
+      padding = 3
+      rounding = 3
+      height = 20
+      render_text = true
+      text_height = 11
+      col.active = rgb(" ,(string-trim (theme* blue) #\#) ")
+      col.text.inactive = rgb(" ,(string-trim (theme* fg) #\#) ")
+    }
+  }
+}
+
+input {
+    kb_layout = de
+    kb_variant = vup
+    kb_model =
+    kb_options =
+    kb_rules =
+
+    follow_mouse = 1
+
+    natural_scroll = yes
+
+    touchpad {
+        tap-to-click = no
+        natural_scroll = yes
+    }
+
+    sensitivity = 0.2
+}
+
+general {
+    gaps_in = 3
+    gaps_out = 5
+    gaps_workspaces = 50
+    border_size = 1
+    col.active_border = rgba(33ccffee) rgba(00ff99ee) 45deg
+    col.inactive_border = rgba(595959aa)
+
+    layout = hy3
+
+    allow_tearing = false
+}
+
+decoration {
+    rounding = 7
+
+    blur {
+        enabled = false
+        size = 3
+        passes = 1
+    }
+
+    drop_shadow = false
+    shadow_range = 4
+    shadow_render_power = 3
+}
+
+animations {
+    enabled = yes
+
+    bezier = linear, 0, 0, 1, 1
+    bezier = md3_standard, 0.2, 0, 0, 1
+    bezier = md3_decel, 0.05, 0.7, 0.1, 1
+    bezier = md3_accel, 0.3, 0, 0.8, 0.15
+    bezier = overshot, 0.05, 0.9, 0.1, 1.1
+    bezier = crazyshot, 0.1, 1.5, 0.76, 0.92
+    bezier = hyprnostretch, 0.05, 0.9, 0.1, 1.0
+    bezier = fluent_decel, 0.1, 1, 0, 1
+    bezier = easeInOutCirc, 0.85, 0, 0.15, 1
+    bezier = easeOutCirc, 0, 0.55, 0.45, 1
+    bezier = easeOutExpo, 0.16, 1, 0.3, 1
+
+    # animation = borderangle, 1, 50, linear, loop
+    animation = windows, 1, 3, md3_decel, popin 60%
+    animation = border, 1, 10, default
+    animation = fade, 1, 2.5, md3_decel
+    animation = workspaces, 1, 7, fluent_decel, slide
+    animation = specialWorkspace, 1, 3, md3_decel, slidevert
+}
+
+gestures {
+    workspace_swipe = on
+}
+
+misc {
+    force_default_wallpaper = -1
+    vfr = true
+    vrr = 1
+    disable_hyprland_logo = true
+    background_color = rgb(" ,(string-trim (theme* bg) #\#) ")
+    focus_on_activate = true
+    key_press_enables_dpms = true
+}
+
+$mainMod = SUPER
+
+bind = $mainMod, Return, exec, $terminal
+bind = $mainMod, Q, killactive,
+bind = $mainMod, M, exit,
+bind = $mainMod, Space, togglefloating,
+bind = $mainMod, D, exec, $menu
+bind = $mainMod, f, fullscreen,
+bind = $mainMod, a, hy3:changefocus,raise
+
+
+bind = $mainMod, w, hy3:changegroup,toggletab
+bind = $mainMod, v, hy3:makegroup,opposite,
+bind = $mainMod, e, hy3:changegroup,opposite,
+
+bind = $mainMod, p, exec, pkill -USR1 waybar
+bind = $mainMod, u, exec, sleep 1; " ,(file-append hyprland "/bin/hyprctl") " dispatch dpms off
+bind = $mainMod, k, exec, " ,(file-append swaynotificationcenter "/bin/swaync-client") " -t
+
+bind=,XF86MonBrightnessDown,exec," ,(file-append brightnessctl "/bin/brightnessctl") " -e set 3%-
+bind=,XF86MonBrightnessUp,exec," ,(file-append brightnessctl "/bin/brightnessctl") " -e set +3%
+"
+; this is fucking cursed, but it works
+,@(apply append
+ (map
+  (lambda (key)
+    (list
+     (string-append "bind = $mainMod, " (primitive-eval `(keys* ,key)) ", hy3:movefocus, " (symbol->string key) "\n")
+     (string-append "bind = $mainMod SHIFT, " (primitive-eval `(keys* ,key)) ", hy3:movewindow, " (symbol->string key) "\n")))
+  '(left right up down)))
+
+,@(apply append (map
+  (lambda (num)
+    (let*
+        ((ws-num (+ num 1))
+         (ws-key (modulo ws-num 10)))
+        (list
+          (format #f "bind = $mainMod, ~a, workspace, ~a\n" ws-key ws-num)
+          (format #f "bind = $mainMod SHIFT, ~a, hy3:movetoworkspace, ~a\n" ws-key ws-num))))
+  (iota 10)))
+
+"
+bindm = $mainMod, mouse:272, movewindow
+bindm = $mainMod, mouse:273, resizewindow
+")))
+
+(define-public waybar-config
+  (mixed-text-file
+   "config.jsonc"
+   (let*
+       ((host-name (gethostname))
+        (mel-address (address-of "mel" host-name)))
+     (with-extensions (list guile-json-4)
+       #~(begin
+           (use-modules (json))
+           (scm->json-string
+            `(("wireplumber"
+               ("format-icons" . #("" "" ""))
+               ("on-click"
+                .
+                ,(string-append #$(file-append wireplumber "/bin/wpctl") " set-mute @DEFAULT_AUDIO_SINK@ toggle"))
+               ("format-muted" . "")
+               ("format" . "{volume}% {icon}"))
+              ("network"
+               ("format-alt" . "{ifname}: {ipaddr}/{cidr}")
+               ("format-disconnected" . "Disconnected ⚠")
+               ("format-linked" . "{ifname} (No IP) ")
+               ("tooltip-format"
+                .
+                "{ifname} via {gwaddr} ")
+               ("format-ethernet" . "{ipaddr}/{cidr} ")
+               ("format-wifi" . " {essid}|{ipaddr}")
+               ("interface" . "wlp*"))
+              ("battery"
+               ("format-icons"
+                .
+                #("", "", "", "", ""))
+               ("format-alt" . "{time} {icon}")
+               ("format-plugged" . "{capacity}% ")
+               ("format-charging" . "{capacity}% ")
+               ("format-full" . "{capacity}% {icon}")
+               ("format" . "{capacity}% {icon}")
+               ("states" ("critical" . 15) ("warning" . 30)))
+              ("clock"
+               ("interval" . 1)
+               ("format" . "{:%a %d %b %T}")
+               ("format-alt" . "{:%Y-%m-%d}")
+               ("tooltip-format"
+                .
+                "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"))
+              ("tray" ("spacing" . 10) ("icon-size" . 21))
+              ("sway/workspaces" ("format" . "{name}"))
+              ;; TODO(robin): this chews a lot of traffic on wg0
+              ;; maybe only buttons, no listening?
+              ;; ("custom/lights"
+              ;;  ("on-scroll-right"
+              ;;   .
+              ;;   ,(string-append #$(file-append mosquitto "/bin/mosquitto_pub") " -q 2 -h " #$mel-address " -t 'zigbee2mqtt/robin/set' -m '{\"color_temp_step\":20}'"))
+              ;;  ("on-scroll-left"
+              ;;   .
+              ;;   ,(string-append #$(file-append mosquitto "/bin/mosquitto_pub") " -q 2 -h " #$mel-address " -t 'zigbee2mqtt/robin/set' -m '{\"color_temp_step\":-20}'"))
+              ;;  ("on-scroll-up"
+              ;;   .
+              ;;   ,(string-append #$(file-append mosquitto "/bin/mosquitto_pub") " -q 2 -h " #$mel-address " -t 'zigbee2mqtt/robin/set' -m '{\"brightness_step\":20}'"))
+              ;;  ("on-scroll-down"
+              ;;   .
+              ;;   ,(string-append #$(file-append mosquitto "/bin/mosquitto_pub") " -q 2 -h " #$mel-address " -t 'zigbee2mqtt/robin/set' -m '{\"brightness_step\":-20}'"))
+              ;;  ("restart-interval" . 1)
+              ;;  ("return-type" . "json")
+              ;;  ("exec" . ,(string-append #$(file-append lights "/bin/lights") " " #$mel-address)))
+              ("modules-right"
+               .
+               #("wireplumber"
+                 ; "custom/lights"
+                 "network"
+                 "battery"
+                 "clock"
+                 "tray"))
+              ("modules-center" . #("sway/window" "hyprland/window"))
+              ("modules-left" . #("sway/workspaces" "hyprland/workspaces"))
+              ("spacing" . 0)
+              ("height" . 18)))
+           )))))
+
+(define-public waybar-style
+  (plain-file "style.css" (read-file-as-string "home/waybar-style.css")))
+
+
 (define-public sway-config
   (let*
-    ((mod "Mod4")
-     (left (keys* left))
-     (down (keys* down))
-     (up (keys* up))
-     (right (keys* right))
-     (bg-color (theme bg))
-     (bg-hl-color "#383838")
-     (fg-color (theme fg))
-     (border-color (theme fg))
-     (fonts `(,monospace-font "FontAwesome"))
-     (config
-       (i3-configuration
-        (extra-config
+      ((mod "Mod4")
+       (left (keys* left))
+       (down (keys* down))
+       (up (keys* up))
+       (right (keys* right))
+       (bg-color (theme bg))
+       (bg-hl-color "#383838")
+       (fg-color (theme fg))
+       (border-color (theme fg))
+       (fonts `(,monospace-font "FontAwesome"))
+       (config
+        (i3-configuration
+         (extra-config
           '("for_window [ title=\"^pdfpc - present\" ] border none floating enable"
+            "focus_on_window_activation focus"
             "for_window [ title=\"^org.anbox.*\" ] border none floating enable"
             "default_border pixel 3"
             "input * {
@@ -408,50 +553,29 @@ alias swaymsg=" (file-append sway "/bin/swaymsg") "
     }
 
 seat * xcursor_theme Adwaita"))
-        (bar (i3-bar-configuration
-                        (bar-command (file-append sway "/bin/swaybar"))
-                        (position "top")
-                        (workspace-buttons #t)
-                        (status-command (file-append i3blocks "/bin/i3blocks"))
-                        (font (i3-font-configuration
-                                (families fonts)
-                                (size 11)))
-                        (strip-workspace-numbers #t)
-                        (colors (i3-bar-colors-configuration
-                                  (statusline fg-color)
-                                  (background bg-color)
-                                  (separator bg-color)
-                                  (focused-workspace
-                                    (make-i3-bar-color bg-color bg-color (theme green)))
-                                  (inactive-workspace
-                                    (make-i3-bar-color bg-color bg-color (theme bright black)))
-                                  (active-workspace
-                                    (make-i3-bar-color bg-color bg-color (theme green)))
-                                  (urgent-workspace
-                                    (make-i3-bar-color bg-color bg-color (theme red)))
-                                  (binding-mode
-                                    (make-i3-bar-color bg-color bg-color (theme red)))))))
-        (colors (i3-color-configuration
+         (bar (i3-bar-configuration
+               (bar-command (file-append waybar "/bin/waybar"))))
+         (colors (i3-color-configuration
                   (focused
-                    (make-i3-color-spec bg-color bg-color fg-color "#666666" "#5f676a"))
+                   (make-i3-color-spec bg-color bg-color fg-color "#666666" "#5f676a"))
                   (focused-inactive
-                    (make-i3-color-spec bg-color bg-color fg-color bg-hl-color bg-hl-color))
+                   (make-i3-color-spec bg-color bg-color fg-color bg-hl-color bg-hl-color))
                   (unfocused
-                    (make-i3-color-spec bg-hl-color bg-hl-color fg-color bg-hl-color "#222222"))
+                   (make-i3-color-spec bg-hl-color bg-hl-color fg-color bg-hl-color "#222222"))
                   (urgent
-                    (make-i3-color-spec "#2f343a" "#900000" fg-color bg-hl-color "#900000"))
+                   (make-i3-color-spec "#2f343a" "#900000" fg-color bg-hl-color "#900000"))
                   (placeholder
-                    (make-i3-color-spec "#000000" "#0c0c0c" fg-color bg-hl-color "#ffffff"))
+                   (make-i3-color-spec "#000000" "#0c0c0c" fg-color bg-hl-color "#ffffff"))
                   (background bg-color)))
-        (font (i3-font-configuration
+         (font (i3-font-configuration
                 (families fonts)
                 (size 8)))
-        (floating-modifier mod)
-        (inner-gaps 10)
-        (outer-gaps 7)
-        (smart-gaps #t)
-        (smart-borders #t)
-        (key-bindings
+         (floating-modifier mod)
+         (inner-gaps 10)
+         (outer-gaps 7)
+         (smart-gaps #t)
+         (smart-borders #t)
+         (key-bindings
           `(((,mod "f") "fullscreen toggle")
             ((,mod "Return") ("exec " ,(file-append alacritty "/bin/alacritty")))
             ((,mod "Shift" "q") "kill")
@@ -479,24 +603,33 @@ seat * xcursor_theme Adwaita"))
             ,@(fold-right append '()
                           (map (lambda (x)
                                  (let*
-                                   ((ws-num (+ x 1))
-                                    (ws (format #f "~a" ws-num))
-                                    (ws-key (modulo ws-num 10))
-                                    (ws-key (format #f "~a" ws-key))
-                                    (ws-pretty #("¹" "²" "³" "⁴" "⁵" "⁶" "⁷" "⁸" "⁹" "⁰"))
-                                    (ws-name (format #f "~a:~a" ws (array-ref ws-pretty x))))
+                                     ((ws-num (+ x 1))
+                                      (ws (format #f "~a" ws-num))
+                                      (ws-key (modulo ws-num 10))
+                                      (ws-key (format #f "~a" ws-key))
+                                      (ws-pretty #("¹" "²" "³" "⁴" "⁵" "⁶" "⁷" "⁸" "⁹" "⁰"))
+                                      (ws-name (format #f "~a:~a" ws (array-ref ws-pretty x))))
                                    `(((,mod ,ws-key)
                                       ,(string-join (list "workspace" ws-name)))
                                      ((,mod "Shift" ,ws-key)
                                       ,(string-join (list "move container to workspace" ws-name))))))
-                           (iota 10))))))))
+                               (iota 10))))))))
     config))
 
 (define-public asoundrc
   (mixed-text-file "asoundrc" "pcm_type.pipewire {
-lib \"" pipewire-0.3 "/lib/alsa-lib/libasound_module_pcm_pipewire.so\"
+lib \"" pipewire "/lib/alsa-lib/libasound_module_pcm_pipewire.so\"
 }
 " (read-file-as-string "home/asoundrc")))
+
+
+(define-public pipewire-conf
+  (plain-file "pipewire.conf" "
+context.properties = {
+    default.clock.rate        = 44100
+}
+
+"))
 
 (define-public prompt-config
   (plain-file "prompt.sh" (read-file-as-string "home/prompt.sh")))
@@ -515,18 +648,10 @@ hidden_tags = inbox unread attachment replied sent encrypted signed"))
   (plain-file "settings.ini" "[Settings]
 gtk-application-prefer-dark-theme = true"))
 
-(define-public inputrc
-  (plain-file "inputrc" (string-append "set editing-mode vi
-set keymap vi-command
-\"k\": nop
-\"j\": nop
-" (keys up) ": previous-history
-" (keys down) ": next-history")))
-
 (define-public battery-script
   (computed-file "battery.sh"
-    #~(let ((script #$(apply mixed-text-file "script"
-                       (list "#!/usr/bin/env sh
+                 #~(let ((script #$(apply mixed-text-file "script"
+                                          (list "#!/usr/bin/env sh
 CHARGE=$(printf '%.0f\\n' $(" (file-append hwinfo/amd "/bin/hwinfo") " battery capacity))
 
 LEVEL=$(((CHARGE-1)/20))
@@ -543,12 +668,12 @@ echo ''
 [[ \"${CHARGE}\" -lt '25' ]] && exit 33
 
 exit 0"))))
-       (use-modules (guix build utils))
-       (copy-file script #$output)
-       (chmod #$output #o755))
-    #:options
-    '(#:local-build? #t
-      #:modules ((guix build utils)))))
+                     (use-modules (guix build utils))
+                     (copy-file script #$output)
+                     (chmod #$output #o755))
+                 #:options
+                 '(#:local-build? #t
+                   #:modules ((guix build utils)))))
 
 (define-public mako-config
   (plain-file  "config"
@@ -556,38 +681,6 @@ exit 0"))))
 width=1920
 margin=0
 padding=0"))
-
-(define-public i3blocks-config
-  (computed-file
-   "config"
-   #~(with-output-to-file
-         #$output
-       (lambda _
-         (set-port-encoding! (current-output-port) "UTF-8") ;; shitty hack for unicode to work
-         (format #t "~a"
-                 (string-append
-                  #$@(list "separator=false
-separator_block_width=5
-[wireless]
-label= 
-command=if ! " (file-append ip_addr "/bin/ip_addr") " wlp3s0; then echo \"​\"; exit 33; fi
-interval=10
-
-[wired]
-label= 
-command=if ! " (file-append ip_addr "/bin/ip_addr") " enp0s25; then echo \"​\"; exit 33; fi
-interval=10
-
-[battery]
-command=" battery-script "
-interval=10
-
-[time]
-label= 
-command=echo \"$(date +'%a %d %b') <b>$(TZ='Europe/Berlin' date +'%T')</b> \"
-markup=pango
-interval=1
-"))))))) ;; this newline is necessary for i3block to get the last config item
 
 
 (define (rasi-bool->string bool)
@@ -602,22 +695,22 @@ interval=1
 
 (define (rasi-config->string config)
   (match config
-         ((config-name config)
-          (let*
-              ((config-value
-                (match config
-                       ((? string?) (format #f "\"~a\"" config))
-                       ((? exact-integer?) (format #f "~a" config))
-                       ((? boolean?) (rasi-bool->string config))
-                       ((? list?) (format #f "\"~a\"" (string-join config ","))))))
-            (format #f "~a: ~a;\n" (rasi-symbol->string config-name) config-value)))))
+    ((config-name config)
+     (let*
+         ((config-value
+           (match config
+             ((? string?) (format #f "\"~a\"" config))
+             ((? exact-integer?) (format #f "~a" config))
+             ((? boolean?) (rasi-bool->string config))
+             ((? list?) (format #f "\"~a\"" (string-join config ","))))))
+       (format #f "~a: ~a;\n" (rasi-symbol->string config-name) config-value)))))
 
 (define (rasi-section->string section)
   (match section
-         ((section-name configs)
-          (apply string-append `(,(symbol->string section-name) " {\n"
-                                 ,@(map rasi-config->string configs)
-                                 "}\n")))))
+    ((section-name configs)
+     (apply string-append `(,(symbol->string section-name) " {\n"
+                            ,@(map rasi-config->string configs)
+                            "}\n")))))
 
 (define (rasi->string config)
   (apply string-append (map rasi-section->string config)))
@@ -642,381 +735,6 @@ interval=1
         (color-active ("#0000"     ,(theme* magenta) "#0000" "#0000" ,(theme* green)))
         (color-window ("#cc2f343f" "#0000"         "#0000"))))))))
 
-(define-public shepherd-config
-  (scheme-file "init.scm"
-    #~(begin
-       (use-modules
-        (ice-9 popen)
-        (ice-9 rdelim)
-        (ice-9 regex)
-        (ice-9 match)
-        (srfi srfi-1)
-        (srfi srfi-26))
-
-       (define (environment-excursion env-thunk body-thunk)
-         (let ((old-env (environ)))
-           (dynamic-wind
-             env-thunk
-             body-thunk
-             (lambda () (environ old-env)))))
-
-       (define-syntax-rule (with-environment-excursion env body ...)
-         (environment-excursion
-          (lambda () (environ env))
-          (lambda () body ...)))
-
-       (define (display-string->number string)
-         (string->number
-          (substring string
-                     (+ 1 (string-index string #\:)))))
-
-       (define (plist-fold proc init plist)
-         (let loop ((result init)
-                    (current plist))
-           (match current
-             (()
-              result)
-             ((prop val rest ...)
-              (loop (proc prop val result)
-                    rest)))))
-
-       (define (plist-get plist property)
-         (match plist
-           ((prop val rest ...)
-            (if (eq? prop property)
-                val
-                (plist-get rest property)))
-           (_ #f)))
-
-       (define (plist-add plist property value)
-         (cons* property value plist))
-
-       (define (plist-delete plist property)
-         (plist-fold (lambda (prop val res)
-                       (if (eq? prop property)
-                           res
-                           (plist-add res prop val)))
-                     '()
-                     plist))
-
-       (define (plist-put plist property value)
-         (plist-add (plist-delete plist property)
-                    property value))
-
-       (define (plist-new old-plist . add-plist)
-         (plist-fold (lambda (prop val res)
-                       (plist-put res prop val))
-                     old-plist
-                     add-plist))
-
-       (define (make-service . args)
-         (apply make <service> args))
-
-
-       (define (%dbus-address display)
-         (string-append (format #f "unix:path=/tmp/dbus-~a-" (getuid)) (substring display 1)))
-
-       (define %ssh-socket #f)         ; set by 'run-gpg-agent'
-
-       (define (->symbol string-or-symbol)
-         (if (symbol? string-or-symbol)
-             string-or-symbol
-             (string->symbol string-or-symbol)))
-
-       (define (display->vt display)
-         "Convert DISPLAY string into a string with VT number.
-Use 'vt1' for display ':0', vt2 for ':1', etc."
-         (let ((display-num (display-string->number display)))
-           (string-append "vt" (number->string (+ 1 display-num)))))
-
-       (define* (environ* display #:optional home)
-         (environment-excursion
-          (lambda ()
-            (setenv "DBUS_SESSION_BUS_ADDRESS" (%dbus-address display))
-            (when %ssh-socket
-              (setenv "SSH_AUTH_SOCK" %ssh-socket))
-            (when home
-              (setenv "HOME" home))
-            (setenv "DISPLAY" display)
-            (setenv "XDG_CURRENT_DESKTOP" "sway")
-            (setenv "XDG_SESSION_TYPE" "wayland")
-            (setenv "WAYLAND_DISPLAY" (string-append
-                                       "wayland-" (substring display 1))))
-          environ))
-
-       (define (run-command command)
-         (zero? (status:exit-val (apply system* command))))
-
-       (define (make-system-constructor command)
-         (lambda _
-           (run-command command)))
-
-       (define (make-system-destructor command)
-         (lambda _
-           (not (run-command command))))
-
-       (define* (make-system-constructor-with-env command #:key display)
-         (lambda _
-           (with-environment-excursion (environ* display)
-             (run-command command))))
-
-       (define* (make-forkexec-constructor-with-env command #:key display)
-         (lambda args
-           (apply (make-forkexec-constructor
-                   command
-                   #:environment-variables (environ* display))
-                  args)))
-
-       (define (display-service-name display base-name)
-         (symbol-append base-name (string->symbol display)))
-
-       (define (display-services-names display base-names)
-         (map (cut display-service-name display <>)
-              base-names))
-
-       (define (display-service-description display base-description)
-         (format #f "~a (DISPLAY=~a)" base-description display))
-
-       (define* (make-display-service #:key display
-                                      (docstring "Unknown")
-                                      (provides '())
-                                      (requires '())
-                                      #:allow-other-keys
-                                      #:rest args)
-         (apply make-service
-                (plist-new args
-                  #:docstring (display-service-description display docstring)
-                  #:provides (display-services-names display provides)
-                  #:requires (display-services-names display requires))))
-
-       (define (make-simple-display-service display . args)
-         (apply make-display-service
-                #:display display args))
-
-       (define* (make-simple-forkexec-display-service display #:key command
-                                                      #:allow-other-keys
-                                                      #:rest args)
-         (apply make-simple-display-service display
-                #:start (make-forkexec-constructor-with-env
-                         command
-                         #:display display)
-                #:stop (make-kill-destructor)
-                args))
-
-       (define* (make-simple-system-display-service display #:key command
-                                                    #:allow-other-keys
-                                                    #:rest args)
-         (apply make-simple-display-service display
-                #:start (make-system-constructor-with-env
-                         command
-                         #:display display)
-                args))
-
-       (define (dbus display)
-         (make-simple-forkexec-display-service display
-           #:docstring "D-Bus Session Daemon"
-           #:provides '(dbus)
-           #:command (list #$(file-append dbus "/bin/dbus-daemon") "--session" "--nofork"
-                          "--address" (%dbus-address display))))
-
-       (define emacs-daemon
-         (make-service
-           #:docstring "Emacs daemon"
-           #:provides '(emacsd)
-           #:start
-           (make-system-constructor
-            `(,#$(file-append emacs "/bin/emacs") "--daemon"))
-           #:stop
-           (make-system-destructor
-            '(,#$(file-append emacs "/bin/emacsclient") "--eval" "(let (kill-emacs-hook) (kill-emacs))"))))
-
-       (define (make-simple-fork-constructor command)
-         (lambda _
-           (let ((pid (primitive-fork)))
-             (if (zero? pid)
-                 (zero? (status:exit-val (apply system* command)))
-              pid))))
-
-       (define* (pulseaudio-service display)
-         (make-display-service
-           #:display display
-           #:docstring "pulseaudio"
-           #:provides '(pulseaudio)
-           #:start (lambda _
-                    (with-environment-excursion (environ* display (format #f "/tmp/pa-~a" (getuid)))
-                                (run-command (list #$(file-append pulseaudio "/bin/pulseaudio") "--start"))))
-           #:stop (make-kill-destructor)))
-
-       (define (pipewire-service display)
-         (make-simple-forkexec-display-service display
-           #:docstring "Pipewire daemon"
-           #:requires '(dbus)
-           #:provides '(pipewire)
-           #:command `(,#$(file-append pipewire-0.3 "/bin/pipewire"))))
-
-       (define (pipewire-media-session-service display)
-         (make-simple-forkexec-display-service display
-           #:docstring "Pipewire media session daemon"
-           #:requires '(pipewire)
-           #:provides '(pipewire-media-session)
-           #:command `(,#$(file-append pipewire-0.3 "/bin/pipewire-media-session"))))
-
-       (define (wireplumber-service display)
-         (make-simple-forkexec-display-service display
-           #:docstring "Wireplumber pipewire session manager"
-           #:requires '(pipewire)
-           #:provides '(wireplumber)
-           #:command `(,#$(file-append wireplumber "/bin/wireplumber"))))
-
-       (define (pipewire-pulse-service display)
-         (make-simple-forkexec-display-service display
-           #:docstring "Pipewire pulse daemon"
-           #:requires '(pipewire)
-           #:provides '(pipewire-pulse)
-           #:command `(,#$(file-append pipewire-0.3 "/bin/pipewire-pulse"))))
-
-       (define (xkeylogger-service display)
-         (make-simple-forkexec-display-service display
-           #:docstring "xkeylogger"
-           #:provides '(xkeylogger)
-           #:command `(,#$(file-append xkeylogger "/bin/xkeylogger") "/data/projects/keyboard/xkeylogger.log")))
-
-;; (define (sway-service display)
-;;   (make-simple-forkexec-display-service display
-;;     #:docstring "sway"
-;;     #:provides '(sway wm)
-;;     #:command `(,#$(file-append sway "/bin/sway"))))
-
-       (define* (pulseaudio-service display)
-         (make-display-service
-           #:display display
-           #:docstring "pulseaudio"
-           #:provides '(pulseaudio)
-           #:start (lambda _
-                    (with-environment-excursion (environ* display (format #f "/tmp/pa-~a" (getuid)))
-                                (run-command (list #$(file-append pulseaudio "/bin/pulseaudio") "--start"))))
-           #:stop (make-kill-destructor)))
-
-
-       (define sway
-         (make-service
-           #:docstring "sway"
-           #:requires '(dbus:0)
-           #:provides '(sway wm)
-           #:start (make-forkexec-constructor (list #$(file-append sway "/bin/sway"))
-                                      #:environment-variables (cons*
-                                                                               (string-append "DBUS_SESSION_BUS_ADDRESS=" (%dbus-address ":0"))
-                                                                               "XDG_CURRENT_DESKTOP=sway"
-                                                                               "XDG_SESSION_TYPE=wayland"
-                                                                               (default-environment-variables)))
-           #:stop
-           (make-kill-destructor)))
-
-       (define ra-multiplex-server
-         (make-service
-           #:docstring "ra-multiplex-server"
-           #:provides '(ra-multiplex)
-           #:start (make-forkexec-constructor (list #$(file-append ra-multiplex "/bin/ra-multiplex-server")))
-           #:stop (make-kill-destructor)))
-
-       ;; (define (i3-service display)
-       ;;   (make-simple-forkexec-display-service display
-       ;;     #:docstring "i3"
-       ;;     #:provides '(i3 wm)
-       ;;     #:command `(,#$(file-append i3-gaps "/bin/i3"))))
-
-       (define (emacsclient-service display)
-          (make-simple-forkexec-display-service display
-            #:docstring "Emacsclient"
-            #:provides '(emacsclient)
-            #:command `(,#$(file-append emacs "/bin/emacsclient") "-c")))
-
-       (define (tmux-service display)
-          (make-simple-system-display-service display
-            #:docstring "tmux server"
-            #:provides '(tmux)
-            #:command `(,#$(file-append tmux "/bin/tmux") "new-session" "-t" "robin" "-d")))
-
-       (define (quasselclient-service display)
-          (make-simple-forkexec-display-service display
-            #:docstring "Quasselclient"
-            #:provides '(quasselclient)
-            #:command `(,#$(file-append quassel "/bin/quasselclient"))))
-
-       (define (telegram-service display)
-          (make-simple-forkexec-display-service display
-            #:docstring "Telegram"
-            #:provides '(telegram)
-            #:command `(,#$(file-append telegram-desktop-fixed "/bin/telegram-desktop"))))
-
-       (define (pavucontrol-service display)
-          (make-simple-forkexec-display-service display
-            #:docstring "Pavucontrol"
-            #:provides '(pavucontrol)
-            #:command `(,#$(file-append pavucontrol "/bin/pavucontrol"))))
-
-       (define (redshift-service display)
-          (make-simple-forkexec-display-service display
-            #:docstring "Redshift"
-            #:provides '(redshift)
-            #:command `(,#$(file-append redshift "/bin/redshift") "-l" "49.4057072:8.6135749" "-b" "1.0:0.7" "-t" "6500k:2500k")))
-
-       (define (natural-scrolling-service display)
-          (make-simple-forkexec-display-service display
-            #:one-shot? #t
-            #:docstring "set natural scrolling"
-            #:provides '(natural-scrolling)
-            #:command `(,#$(file-append xinput "/bin/xinput") "set-prop" "TPPS/2 IBM TrackPoint" "libinput Natural Scrolling Enabled" "1")))
-
-       (define (make-display-services display)
-         (map (cut <> display)
-              (list pipewire-service
-                    pipewire-pulse-service
-                    pipewire-media-session-service
-                    wireplumber-service
-                    ;; i3-service
-                    pulseaudio-service
-                    dbus
-                    emacsclient-service
-                    tmux-service
-                    quasselclient-service
-                    telegram-service
-                    pavucontrol-service
-                    xkeylogger-service
-                    redshift-service
-                    natural-scrolling-service)))
-
-
-       (apply register-services
-              (append
-               (list
-                sway
-                emacs-daemon
-                ra-multiplex-server)
-               (make-display-services ":0")))
-
-       (action 'shepherd 'daemonize)
-       (start 'dbus:0)
-       (start 'sway)
-       (start 'ra-multiplex)
-       (start 'pipewire:0)
-       (start 'pipewire-pulse:0)
-       (start 'wireplumber:0)
-;; (start 'dunst:0)
-       (start 'pavucontrol:0)
-;; (start 'tmux:0)
-       (start 'emacsd)
-;; (start 'emacsclient:0)
-       (start 'quasselclient:0)
-       (start 'telegram:0))))
-;; (start 'xkeylogger:0)
-;; (start 'redshift:0)
-;; (start 'natural-scrolling:0)
-
-(define-public user-shepherd-setup
-  (mixed-text-file "user-shepherd-setup"
-   "[[ -z $(pgrep -U $(id --user) '^shepherd$') ]] && " (file-append shepherd "/bin/shepherd") " -l ~/log/shepherd.log -c " shepherd-config " >> ~/log/shepherd.log 2>&1"))
-
 ;; (define-public cargo-sccache-setup
 ;;   (mixed-text-file "cargo-sccache-setup"
 ;;                    "[build]
@@ -1034,7 +752,7 @@ rustflags = ['-C', 'link-arg=-fuse-ld=lld']
   (mixed-text-file "atuin-config"
                    "style = 'compact'
 update_check = false
-search_mode = 'fuzzy'
+search_mode = 'fulltext'
 "))
 
 (define-public ra-multiplex-config
@@ -1044,19 +762,20 @@ search_mode = 'fuzzy'
 (define-public basic-program-configs
   (list
    `(".config/rofi/config.rasi" ,rofi-config)
-   `(".config/guix/channels.scm" ,guix-config)
    `(".config/mako/config" ,mako-config)
    `(".config/wofi/config" ,wofi-config)
-   `(".config/i3blocks/config" ,i3blocks-config)
    `(".config/gtk-3.0/settings.ini" ,gtk3-settings)
    `(".config/ra-multiplex/config.toml" ,ra-multiplex-config)
-   `(".config/alacritty/alacritty.yml" ,alacritty-config)
+   `(".config/alacritty/alacritty.toml" ,alacritty-config)
    `(".config/notifymuch/notifymuch.cfg" ,notifymuch-config)
    `(".config/atuin/config.toml" ,atuin-config)
    `(".config/sway" ,(i3-home sway-config))
+   `(".config/hypr/hyprland.conf" ,hyprland-config)
+   `(".config/waybar/config.jsonc" ,waybar-config)
+   `(".config/waybar/style.css" ,waybar-style)
+   `(".config/pipewire/pipewire.conf.d/clockrate.conf" ,pipewire-conf)
    `(".cargo/config.toml" ,cargo-sccache-setup)
-   `(".inputrc" ,inputrc)
-   ;`(".bazelrc" ,bazel-settings) doesnt really work
+   ;; `(".bazelrc" ,bazel-settings) doesnt really work
    `(".asoundrc" ,asoundrc)
    `(".tmux.conf" ,tmux-config)
    `(".ideavimrc" ,ideavim-config)
@@ -1096,18 +815,20 @@ eval \"$(" (file-append zoxide "/bin/zoxide") " init --cmd cd bash)\"
 
 export XAUTHORITY=" xauthority-file "
 
+export GOPRIVATE=gitlab.uni-kassel.de/*,git.roheiyd.de/*
+
 export EDITOR='TERM=xterm-24bits " (file-append emacs "/bin/emacsclient") " -c -t'
 export VISUAL=$EDITOR
 
-export PATH=\"$PATH:/data/projects/dias/dart-sdk/flutter/bin\"
+export PATH=\"$PATH:/data/projects/flutter/flutter/bin:/home/robin/go/bin\"
 export LM_LICENSE_FILE=/data/projects/fpga/diamond/license.dat
 
 export LIBCLANG_PATH=~/.guix-home/profile/lib
 export SHADERC_LIB_DIR=~/.guix-home/profile/lib
 export CC=gcc
 
-alias pw-jack=" (file-append pipewire-0.3 "/bin/pw-jack") "
-alias ls='" (file-append exa "/bin/exa") " --color=auto'
+alias pw-jack=" (file-append pipewire "/bin/pw-jack") "
+alias ls='" (file-append exa "/bin/eza") " --color=auto'
 alias l='ls -la'
 
 alias grep='grep --color=auto'
@@ -1115,5 +836,6 @@ alias grep='grep --color=auto'
 alias nvim=$EDITOR
 alias vim=$EDITOR
 alias vi=$EDITOR
+printf \"\\e[?1042l\"
 
 [ -z \"$TMUX\" ] && (grep -e '/dev/tty[1-9]' <(tty) > /dev/null || " (file-append tmux "/bin/tmux") " new-session -t robin)"))

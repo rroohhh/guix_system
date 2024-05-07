@@ -47,7 +47,7 @@
                                (default #t))
   ;; file
   (config                      docker-configuration-config
-                               (default #t)))
+                               (default #f)))
 
 ;; (define-configuration docker-configuration
 ;;   (docker

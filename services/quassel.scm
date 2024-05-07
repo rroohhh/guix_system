@@ -5,9 +5,14 @@
   #:use-module (gnu packages admin)
   #:use-module (gnu packages tls)
   #:use-module (gnu system shadow)
+  #:autoload (gnu build linux-container) (%namespaces)
+  #:use-module ((gnu system file-systems) #:select (file-system-mapping))
   #:use-module (guix records)
   #:use-module (guix modules)
+  #:use-module (guix least-authority)
   #:use-module (ice-9 match)
+  #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-35)
   #:export (quassel-configuration
             quassel-service-type))
 
@@ -28,34 +33,38 @@
 (define quassel-shepherd-service
   (match-lambda
     (($ <quassel-configuration> quassel interface port user loglevel)
-     (with-imported-modules (source-module-closure
-                              '((gnu build shepherd)
-                                (gnu system file-systems)))
-       (list (shepherd-service
-               (provision '(quassel))
-               (requirement '(user-processes networking))
-               (modules '((gnu build shepherd)
-                          (gnu system file-systems)))
-               (start #~(make-forkexec-constructor/container
-                          (list #$(file-append quassel "/bin/quasselcore")
-                                "--configdir=/var/lib/quassel"
-                                "--logfile=/var/log/quassel/core.log"
-                                (string-append "--loglevel=" #$loglevel)
-                                (string-append "--port=" (number->string #$port))
-                                (string-append "--listen=" #$interface))
-                          #:user #$user
-                          #:mappings (list (file-system-mapping
-                                            (source "/tmp")
-                                            (target source))
-                                           (file-system-mapping
-                                            (source "/var/lib/quassel")
-                                            (target source)
-                                            (writable? #t))
-                                           (file-system-mapping
-                                            (source "/var/log/quassel")
-                                            (target source)
-                                            (writable? #t)))))
-               (stop  #~(make-kill-destructor))))))))
+     (let ((quassel (least-authority-wrapper
+                (file-append quassel "/bin/quasselcore")
+                #:name "quasselcore"
+                #:mappings (list (file-system-mapping
+                                  (source "/tmp")
+                                  (target source))
+                                 (file-system-mapping
+                                  (source "/var/lib/quassel")
+                                  (target source)
+                                  (writable? #t))
+                                 (file-system-mapping
+                                  (source "/var/log/quassel")
+                                  (target source)
+                                  (writable? #t)))
+                #:namespaces (fold delq %namespaces '(net user)))))
+      (with-imported-modules (source-module-closure
+                               '((gnu build shepherd)
+                                 (gnu system file-systems)))
+        (list (shepherd-service
+                (provision '(quassel))
+                (requirement '(user-processes networking))
+                (modules '((gnu build shepherd)
+                           (gnu system file-systems)))
+                (start #~(make-forkexec-constructor
+                           (list #$quassel
+                                 "--configdir=/var/lib/quassel"
+                                 "--logfile=/var/log/quassel/core.log"
+                                 (string-append "--loglevel=" #$loglevel)
+                                 (string-append "--port=" (number->string #$port))
+                                 (string-append "--listen=" #$interface))
+                           #:user #$user))
+                (stop  #~(make-kill-destructor)))))))))
 
 (define (quassel-account config)
   (let* ((name (quassel-configuration-user config)))

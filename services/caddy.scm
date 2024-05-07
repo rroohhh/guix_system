@@ -36,7 +36,7 @@
          (call-with-output-file #$output
            (lambda (port)
              (format port "~a" (string-join (list #$@(caddy-configuration-config-blocks config)) "\n"))))
-         (invoke #$(file-append caddy "/bin/caddy") "fmt" "-overwrite" #$output)
+         (invoke #$(file-append caddy "/bin/caddy") "fmt" "--overwrite" #$output)
          #t)
      #:options '(#:local-build? #t
                  #:modules ((guix build utils)))))
@@ -47,7 +47,7 @@
          (provision '(caddy))
          (start #~(make-forkexec-constructor
                    (list #$(file-append (caddy-configuration-caddy config)
-                                        "/bin/caddy") "run" "-adapter" "caddyfile" "-config" #$caddy-config-file)
+                                        "/bin/caddy") "run" "--adapter" "caddyfile" "--config" #$caddy-config-file)
                    ;; #:user #$(caddy-configuration-user config) ;; not possible at the moment, setcap is not supported / hard to do
                    #:log-file "/var/log/caddy.log"))
          (stop #~(make-kill-destructor))

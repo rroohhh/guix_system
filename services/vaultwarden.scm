@@ -106,7 +106,9 @@
                      (let* ((env-vars (list
                                        (string-append
                                         "ADMIN_TOKEN="
-                                        (call-with-input-file #$(vaultwarden-conf-admin-token-file config) (lambda (port) (get-string-all port))))
+                                        (call-with-input-file
+                                            #$(vaultwarden-conf-admin-token-file config)
+                                            (@ (ice-9 textual-ports) get-string-all)))
                                        (string-append
                                          "ENV_FILE=" #$vault-config-file)))
                              (ctor (make-forkexec-constructor

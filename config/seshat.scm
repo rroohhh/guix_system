@@ -5,6 +5,7 @@
   #:use-module (services influxdb)
   #:use-module (services scrabble)
   #:use-module (services caddy)
+  ;; #:use-module (services cgroupv2)
   #:use-module (services quassel)
   #:use-module (services boulderhaus)
   #:use-module (services vaultwarden)
@@ -13,14 +14,17 @@
   #:use-module (gnu machine)
   #:use-module (gnu machine ssh)
   #:use-module (gnu system file-systems)
+  #:use-module (gnu services admin)
   #:use-module (gnu services networking)
   #:use-module (gnu services databases)
-  #:use-module (gnu services docker)
   #:use-module (gnu services ssh)
+  #:use-module (gnu services docker)
   #:use-module (gnu services mail)
+  #:use-module (gnu services mcron)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages admin)
+  #:use-module (gnu packages sqlite)
   #:use-module (guix utils)
   #:use-module (guix modules)
   #:use-module (srfi srfi-1)
@@ -64,6 +68,7 @@
                            ("files.<host>" "mel" "8000")
                            ("ada.<host>" "ada" "8000")
                            ("sg.<host>" "seshat" "3080")
+                           ("c.<host>" "mel" "60808")
                            ("git.froheiyd.de" "rofydi" "3000"))))
     (with-imported-modules (source-module-closure* '((config network))) ; TODO(robin): write a better version of source-module-closure to use here
         #~(begin
@@ -90,6 +95,13 @@ reverse_proxy * https://" (address-of "mel" #$host-name) ":8200 {
   transport http {
     tls_insecure_skip_verify
   }
+}
+}")
+                ,(string-append "zb.<host> {
+reverse_proxy * " (address-of "mel" #$host-name) ":8088
+basicauth * {
+jonas $2a$14$.MfWJ/J3jal3Fjg5Ta5ax.jwCmkhA.Asnmtl1O8Q8LnGrTCRL1xwu
+aik $2a$14$flI7bbp/F2ri8fUnx5LQ6eaO3oblVYN8WuGkp9NojXPBsj7nY8V7S
 }
 }")
                 ,(string-append "bh.<host> {
@@ -418,20 +430,22 @@ paths:
                ,(service iptables-service-type
                          (iptables-configuration
                           (ipv4-rules
-                           (plain-file "iptables.rules" "
--t nat -A PREROUTING -p tcp -i wg0 --dport 2222 -j DNAT --to-destination 192.168.3.3:2222
--t nat -A PREROUTING -p tcp -i wg0 --dport 22222 -j DNAT --to-destination 192.168.3.3:22
-
--t nat -A POSTROUTING -p tcp --match multiport --dports 22,2222 -d 192.168.3.3 -j SNAT --to-source 192.168.3.1
+                           (plain-file "iptables.rules" "*nat
+:POSTROUTING ACCEPT
+-A PREROUTING -i eth0 -p tcp -m tcp --dport 2222 -j DNAT --to-destination 192.168.3.3:2222
+-A PREROUTING -i eth0 -p tcp -m tcp --dport 22222 -j DNAT --to-destination 192.168.3.3:22
+-A POSTROUTING -d 192.168.3.3/32 -p tcp -m multiport --dports 22,2222 -j SNAT --to-source 192.168.3.1
+COMMIT
 "))))
+
                ,(service rtsp-simple-server-service-type
                                     (rtsp-simple-server-configuration
                                      (config rtsp-simple-server-config)))
                ,(service bhbooking-service-type)
-;               ,(service bhscraping-service-type
-;                         (bhscraping-configuration
-;                          (influxdb-host (string-append "http://" (address-of "mel" host-name) ":8086"))
-;                          (influxdb-token-file "/secrets/bhscraping_influxdb_token")))
+               ;; ,(service bhscraping-service-type
+               ;;           (bhscraping-configuration
+               ;;            (influxdb-host (string-append "http://" (address-of "mel" host-name) ":8086"))
+               ;;            (influxdb-token-file "/secrets/bhscraping_influxdb_token")))
                ,(service postgresql-service-type
                          (postgresql-configuration
                           (postgresql postgresql-13)))
@@ -441,7 +455,7 @@ paths:
                                  (postgresql-role
                                   (name "telegraf")
                                   (create-database? #t))))
-               ,(simple-service 'telegraf-postgresql-role
+               ,(simple-service 'quassel-postgresql-role
                                 postgresql-role-service-type
                                 (list
                                  (postgresql-role
@@ -479,7 +493,24 @@ type = http_x_remote_user
                              (admin-token-file "/secrets/vaultwarden_admin_token")
                              (port 21369)
                              (domain "https://vw.coroot.de")))
+
+                 ,(service mcron-service-type
+                           (mcron-configuration
+                            (jobs
+                             (list
+                              #~(job '(next-minute '(5))
+                                      (string-append #$sqlite "/bin/sqlite3 /var/vaultwarden/db.sqlite3 '.backup /var/vaultwarden/db-backup.sqlite3'")
+                                      #:user "vaultwarden")))))
                  ,@(networking-for host-name)
+                 ,@(map (lambda (name)
+                     (simple-service (symbol-append 'rotate-log (string->symbol name))
+                      rottlog-service-type
+                      (list
+                       (log-rotation
+                        (files (list name))))))
+                    (list
+                     "/var/log/mcron.log" "/var/log/caddy.log" "/var/log/telegraf.log" "/var/log/containerd.log"
+                     "/var/log/influxdb.log" "/var/log/docker.log"))
                  ,@(modify-services
                     base-services
                     (openssh-service-type
@@ -496,12 +527,13 @@ type = http_x_remote_user
                                          key-config))
                                    ssh-default-authorized-keys))))))))))
 
+
 (list (machine
-       (operating-system seshat-system-config)
-       (environment managed-host-environment-type)
-       (configuration
-        (machine-ssh-configuration
-         (host-name "coroot.de")
-         (system "x86_64-linux")
-         (identity "/home/robin/.ssh/id_ed25519")
-         (host-key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHDeKweSXGxPW8MQvynT2tN19M5ttMDPiGeGGg4Cbic2")))))
+              (operating-system seshat-system-config)
+              (environment managed-host-environment-type)
+              (configuration
+                       (machine-ssh-configuration
+                                 (host-name "coroot.de")
+                                 (system "x86_64-linux")
+                                 (identity "/home/robin/.ssh/id_ed25519")
+                                 (host-key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHDeKweSXGxPW8MQvynT2tN19M5ttMDPiGeGGg4Cbic2")))))

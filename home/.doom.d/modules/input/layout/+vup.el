@@ -39,8 +39,8 @@
            ;; "j" as a "classic" rotation
            :nv "T" #'+multiple-cursors/evil-mc-toggle-cursors
            :nv "j" #'+multiple-cursors/evil-mc-toggle-cursors))
-    (after! treemacs
-      (+layout-vup-rotate-nt-bare-keymap nil '(evil-treemacs-state-map)))
+    ;; (after! treemacs
+    ;;   (+layout-vup-rotate-nt-bare-keymap nil '(evil-treemacs-state-map)))
     (after! (:or helm ivy vertico icomplete)
       (+layout-vup-rotate-bare-keymaps
        '(minibuffer-local-map
@@ -120,7 +120,7 @@
     (after! (evil magit)
       (+layout-vup-rotate-keymaps
         '(magit-mode-map)))
-    (after! (evil magit)
+    ;; (after! (evil magit)
       ;; Without this, "s" is mapped to 'magit-delete-thing (the old "k" for "kill") and
       ;; takes precedence over the evil command to go up one line
       ;; :nv doesn't work on this, needs to be the bare map.
@@ -134,8 +134,8 @@
       ;; magit-mode-map <normal-state> x
       ;; magit-mode-map <visual-state> x
       ;; magit-mode-map s
-      (map! :map magit-mode-map "s" nil)
-      (map! :map magit-mode-map "t" nil)
+      ;; (map! :map magit-mode-map "s" nil)
+      ;; (map! :map magit-mode-map "t" nil)
       ;; Even though magit bindings are part of evil-collection now,
       ;; the hook only runs on `evil-collection-magit-maps`, which is
       ;; way to short to cover all usages.
@@ -143,12 +143,12 @@
       ;; NOTE: magit-mode-map is last because other keymaps inherit from it.
       ;; Therefore to prevent a "double rotation" issue, magit-mode-map is
       ;; changed last
-      (+layout-vup-rotate-keymaps '(magit-mode-map))
+      ;; (+layout-vup-rotate-keymaps '(magit-mode-map)))
     (after! evil-easymotion
       ;; instead of using gs as the evilem-map we use gé to avoid conflicts with org-mode
       ;; down the road
       ;; (map! :nvm "gé" evilem-map)
-      (+layout-vup-rotate-bare-keymaps '(evilem-map)))))
+      (+layout-vup-rotate-bare-keymaps '(evilem-map))))
 
 (+layout-remap-keys-for-vup-h)
 (when (modulep! :editor evil)

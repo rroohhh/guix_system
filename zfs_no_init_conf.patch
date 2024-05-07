@@ -1,0 +1,18 @@
+diff --git a/etc/Makefile.am b/etc/Makefile.am
+index 7187762d3..b460a17ec 100644
+--- a/etc/Makefile.am
++++ b/etc/Makefile.am
+@@ -23,13 +23,6 @@ $(call SHELLCHECK_OPTS,$(sysconf_zfs_DATA)): SHELLCHECK_SHELL = sh
+ 
+ 
+ if BUILD_LINUX
+-initconf_DATA = \
+-	%D%/default/zfs
+-
+-SUBSTFILES          += $(initconf_DATA)
+-SHELLCHECKSCRIPTS   += $(initconf_DATA)
+-$(call SHELLCHECK_OPTS,$(initconf_DATA)): SHELLCHECK_SHELL = sh
+-
+ 
+ if INIT_SYSV
+ dist_noinst_DATA += %D%/init.d/README.md

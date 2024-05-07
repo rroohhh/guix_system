@@ -1,5 +1,4 @@
 (define-module (home config)
-  #:use-module (vup emacs)
   #:use-module ((gnu packages emacs) #:prefix guix:)
   #:export (vup keys* keys gruvbox-dark theme* theme))
 

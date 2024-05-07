@@ -76,7 +76,14 @@
                                           influxdb-accounts)))))
 
 (define %telegraf-default-config
-  #~(string-append "# Read metrics about cpu usage
+  #~(string-append "
+[agent]
+  flush_interval = \"300s\"
+  flush_jitter = \"30s\"
+  metric_batch_size = 10000
+  metric_buffer_limit = 1000000
+
+# Read metrics about cpu usage
 [[inputs.cpu]]
   percpu = true
   totalcpu = true
@@ -225,7 +232,7 @@
 
   (list (shepherd-service
          (documentation "telegraf")
-         (requirement '(networking))
+         (requirement '(networking dockerd))
          (provision '(telegraf))
          (start #~ (lambda _
                      (let* ((env-vars (list

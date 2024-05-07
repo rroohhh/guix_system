@@ -12,6 +12,7 @@
   #:use-module (gnu packages linux)
   #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages rsync)
+  #:use-module (gnu packages docker)
   #:use-module (gnu services dbus)
   #:use-module (gnu services xorg)
   #:use-module (gnu services avahi)
@@ -19,15 +20,23 @@
   #:use-module (gnu services ssh)
   #:use-module (gnu services sysctl)
   #:use-module (gnu services shepherd)
-  #:use-module ((gnu services desktop) #:select (accountsservice-service elogind-service))
+  #:use-module (gnu services desktop)
   #:use-module (gnu system setuid)
   #:use-module (vup linux)
   #:use-module (vup hwinfo)
   #:use-module (config linux)
-  #:use-module (services cgroupv2)
+  ;; #:use-module (services cgroupv2)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26))
+
+(define-public docker-fixed
+  (package
+    (inherit docker)
+    (name "docker-fixed")
+    (arguments
+     (append `(#:tests? #f ,@(package-arguments docker))))))
+
 
 (define-public base-system-config
   (operating-system
@@ -52,7 +61,7 @@
                               (file-like->setuid-program (file-append hwinfo "/bin/hwinfo")))
                              %setuid-programs))
 
-    (kernel linux-nonfree/extra_config)
+    (kernel linux-nonfree/extra_config-x86) ;; TODO(robin): switch this automtically depending on arch
     (firmware (append (list linux-firmware-nonfree) %base-firmware))
     (file-systems '())
 
@@ -62,7 +71,8 @@
        rsync
        xfsprogs
        openssh vim
-       nss-certs) ;; for HTTPS access
+       nss-certs ;; for HTTPS access
+       turbostat) ;; sysprof
       %base-packages))
 
     (name-service-switch %mdns-host-lookup-nss)))
@@ -79,11 +89,12 @@
 
 (define-public base-services
   `(,(service polkit-service-type)
-    ,(elogind-service)
-    ,(dbus-service)
-    ,(accountsservice-service)
+    ,(service elogind-service-type
+              (elogind-configuration
+               (handle-lid-switch 'suspend)))
+    ,(service dbus-root-service-type)
+    ,(service accountsservice-service-type)
     ,(service localed-service-type)
-
     ,(service avahi-service-type)
     ,(service ntp-service-type)
     ,(service openssh-service-type
@@ -102,13 +113,17 @@
                 (guix-configuration
                   (inherit config)
                   (substitute-urls
-                    (append (list "https://substitutes.nonguix.org")
+                    (append
+                     (list
+                      "https://guix.bordeaux.inria.fr"
+                      "https://substitutes.nonguix.org")
                             %default-substitute-urls))
                   (discover? #t)
                   (authorized-keys
                    (append (list (local-file "../data/ada-signing-key.pub")
                                  (local-file "../data/mel-signing-key.pub")
-                                 (local-file "../data/nonguix-signing-key.pub"))
+                                 (local-file "../data/nonguix-signing-key.pub")
+                                 (local-file "../data/guix-hpc-signing-key.pub"))
                            %default-authorized-guix-keys))))
         (sysctl-service-type config =>
                        (sysctl-configuration

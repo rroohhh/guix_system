@@ -1,1 +1,0 @@
-(packages->manifest `(,hello))
