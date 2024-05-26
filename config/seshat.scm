@@ -32,7 +32,7 @@
 
 ;; initial setup:
 ;; boot into rescue mode (debian 10)
-;; guix system  image  -t efi-raw config-seshat.scm
+;; guix system  image  -t mbr-raw config-seshat.scm
 ;; copy over the image
 ;; mkdir /chroot
 ;; mount /dev/sda2 /chroot
@@ -406,11 +406,11 @@ paths:
     (append
      (list
       (file-system
-       (device (uuid "ffa1c42b-668c-41fb-b2e8-98a784e42b0f"))
+       (device (uuid "bf8f73bb-2e50-48b7-8a66-bede2897db56"))
        (mount-point "/")
        (type "ext4"))
       (file-system
-       (device (uuid "5c83a2d6-7862-48d5-adb3-356f86553e05"))
+       (device (uuid "7d789fc0-dba4-4627-9ebc-3a6eb8b5e02d"))
        (mount-point "/boot")
        (type "ext4")))
      %base-file-systems))
@@ -421,11 +421,11 @@ paths:
                              (addresses
                                (list (network-address
                                        (device "eth0")
-                                       (value "167.86.67.237/24"))))
+                                       (value "45.94.209.32/24"))))
                              (routes
                                (list (network-route
                                        (destination "default")
-                                       (gateway "167.86.67.1"))))
+                                       (gateway "45.94.209.1"))))
                              (name-servers '("213.136.95.10" "213.136.95.11" "1.1.1.1" "1.0.0.1")))))
                ,(service iptables-service-type
                          (iptables-configuration
@@ -536,4 +536,6 @@ type = http_x_remote_user
                                  (host-name "coroot.de")
                                  (system "x86_64-linux")
                                  (identity "/home/robin/.ssh/id_ed25519")
+                                 ;; (build-locally? #t)
                                  (host-key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHDeKweSXGxPW8MQvynT2tN19M5ttMDPiGeGGg4Cbic2")))))
+;; seshat-system-config

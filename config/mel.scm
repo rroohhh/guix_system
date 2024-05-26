@@ -8,6 +8,8 @@
   #:use-module (services secrets)
   #:use-module (services influxdb)
   #:use-module (services vault)
+  #:use-module (services mosquitto)
+  #:use-module (services zigbee2mqtt)
   #:use-module (ice-9 textual-ports)
   #:use-module (gnu)
   #:use-module (gnu machine)
@@ -204,6 +206,7 @@
                          (influxdb-token-file "/secrets/mel_telegraf_token") ; TODO(robin): use vault??
                          (influxdb-bucket "monitoring")
                          (influxdb-orga "infra")
+                         (extra-requirements (list 'mqtt))
                          (config (list
                                   %telegraf-default-config
                                   extra-telegraf-config))))
@@ -218,6 +221,12 @@
                         (vault-unseal-configuration
                          (vault-connection root-vault-connection)
                          (unsealing-keys-file "/data/projects/guix_system/data/secrets/vault_unseal_keys")))
+               (service mosquitto-service-type
+                        (mosquitto-configuration
+                         (config (plain-file "mosquitto.conf"
+                                             "listener 1883
+allow_anonymous true"))))
+               (service zigbee2mqtt-service-type)
                ;; (service generated-secrets-root-service-type)
                ;; (vault-generated-secret
                ;;                 concourse-web-vault-role-id
@@ -286,7 +295,7 @@
                                           "/bin/rsync"
                                           " -azz -e 'ssh -i /home/robin/.ssh/id_ed25519' --delete --inplace --numeric-ids --acls --xattrs root@coroot.de:/var/vaultwarden/ /backup/vaultwarden-backup/;"
                                           #$rsync "/bin/rsync"
-                                          " -azz --exclude=/proc --exclude=/dev --exclude=/sys --exclude=/run --exclude=/tmp --exclude=/gnu --exclude=/var/lib/docker --exclude=/mnt --exclude=/srv -e 'ssh -i /home/robin/.ssh/id_ed25519' --delete --inplace --numeric-ids --acls --xattrs coroot.de:/ /backup/coroot-backup/;"
+                                          " -azz --exclude=/proc --exclude=/dev --exclude=/sys --exclude=/run --exclude=/tmp --exclude=/gnu --exclude=/var/lib/docker --exclude=/mnt -e 'ssh -i /home/robin/.ssh/id_ed25519' --delete --inplace --numeric-ids --acls --xattrs coroot.de:/ /backup/coroot-backup/;"
                                           #$rsync "/bin/rsync"
                                           " -azz --exclude=/proc --exclude=/dev --exclude=/sys --exclude=/run --exclude=/tmp --exclude=/var/lib/lxcfs -e 'ssh -i /home/robin/.ssh/id_ed25519' --delete --inplace --numeric-ids --acls --xattrs vup.niemo.de:/ /backup/seshat-backup/"))))
                (service libvirt-service-type

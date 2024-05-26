@@ -203,7 +203,11 @@
 
   ;; list of config snippets
   (config                 telegraf-configuration-config
-                          (default (list %telegraf-default-config))))
+                          (default (list %telegraf-default-config)))
+  ;; telegraf tends to not handle connection failure to things it monitors well
+  ;; you can use this field to add extra startup requirements to the shephert service
+  (extra-requirements     telegraf-configuration-extra-requirements
+                          (default '())))
 
 (define (telegraf-shepherd-service config)
   "Return a <shepherd-service> for telegraf with CONFIG."
@@ -232,9 +236,9 @@
 
   (list (shepherd-service
          (documentation "telegraf")
-         (requirement '(networking dockerd))
+         (requirement (append '(networking dockerd) (telegraf-configuration-extra-requirements config))) ; TODO(robin): remove hardcoded requirements and make this configurable
          (provision '(telegraf))
-         (start #~ (lambda _
+         (start #~(lambda _
                      (let* ((env-vars (list
                                        (string-append
                                         "INFLUXDB_TOKEN="

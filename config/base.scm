@@ -5,6 +5,7 @@
   #:use-module (guix packages)
   #:use-module (gnu)
   ;; #:use-module ((gnu system nss) #:select (%mdns-host-lookup-nss))
+  #:use-module (gnu packages admin)
   #:use-module (gnu packages ssh)
   #:use-module (gnu packages vim)
   #:use-module (gnu packages certs)
@@ -13,6 +14,8 @@
   #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages rsync)
   #:use-module (gnu packages docker)
+  #:use-module (gnu packages tmux)
+  #:use-module (gnu services admin)
   #:use-module (gnu services dbus)
   #:use-module (gnu services xorg)
   #:use-module (gnu services avahi)
@@ -68,10 +71,11 @@
     (packages
      (append
       (list
+       tmux
        rsync
        xfsprogs
        openssh vim
-       nss-certs ;; for HTTPS access
+       ;; nss-certs ;; for HTTPS access
        turbostat) ;; sysprof
       %base-packages))
 
@@ -109,6 +113,17 @@
                (port 12734)
                (advertise? #t)))
     ,@(modify-services %base-services
+        (rottlog-service-type config =>
+                              (rottlog-configuration
+                               (inherit config)
+                               (rc-file
+                                (computed-file
+                                 "rottlog-rc"
+                                 #~(call-with-output-file (string-append #$output)
+                                       (lambda (port)
+                                         (display (call-with-input-file #$(file-append rottlog "/etc/rc") (@ (ice-9 textual-ports) get-string-all)) port)
+                                         (display "nomissingok\n" port) ;; this is somehow inverted?
+                                    ))))))
         (guix-service-type config =>
                 (guix-configuration
                   (inherit config)
