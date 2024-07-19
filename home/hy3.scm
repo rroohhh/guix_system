@@ -27,7 +27,7 @@
        (file-name (git-file-name name version))
        (sha256
         (base32
-         "0g2szy938w017nmlf8h0q5lfh9iz4qd38lsnxnnj9kh5x9vnb99y"))))
+         "0wn09xbnfgj8csap7fh6ri4s9x2i1dg7m67z5a51rry2plqcimk3"))))
      (build-system cmake-build-system)
      (native-inputs (list pkg-config gcc-13))
      (arguments
@@ -40,5 +40,3 @@
      (synopsis "Hyprland plugin for an i3 / sway like manual tiling layout")
      (description "Hyprland plugin for an i3 / sway like manual tiling layout")
      (license (list license:gpl3)))))
-
-hyprland-hy3

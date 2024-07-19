@@ -10,6 +10,7 @@
   #:use-module (services vault)
   #:use-module (services mosquitto)
   #:use-module (services zigbee2mqtt)
+  #:use-module (services bme680)
   #:use-module (ice-9 textual-ports)
   #:use-module (gnu)
   #:use-module (gnu machine)
@@ -227,6 +228,10 @@
                                              "listener 1883
 allow_anonymous true"))))
                (service zigbee2mqtt-service-type)
+               (service bme680-service-type
+                        (bme680-configuration
+                         (influxdb-host (string-append "http://" (address-of "mel" host-name) ":8086"))
+                         (influxdb-token-file "/secrets/bme680_token")))
                ;; (service generated-secrets-root-service-type)
                ;; (vault-generated-secret
                ;;                 concourse-web-vault-role-id
@@ -321,8 +326,8 @@ allow_anonymous true"))))
        (environment managed-host-environment-type)
        (configuration
         (machine-ssh-configuration
-         (host-name "192.168.3.4")
-         ;; (host-name "mel")
+         ;; (host-name "192.168.3.4")
+         (host-name "mel")
          (system "x86_64-linux")
          (identity "/home/robin/.ssh/id_ed25519")
          (host-key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII5NlwiXunTqXKa72M3Sa4wy0yDwdG7+lA9eJBBTTDlN")))))

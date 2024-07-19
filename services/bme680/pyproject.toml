@@ -1,0 +1,10 @@
+[project]
+name = "pycard10"
+version = "0.1.0"
+
+dependencies = [
+"pyserial"
+]
+
+[project.scripts]
+pycard10 = "pycard10:main"

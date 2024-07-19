@@ -1,4 +1,5 @@
 (define-module (config seshat)
+  #:use-module (vup docker)
   #:use-module (config base)
   #:use-module (config network)
   #:use-module (config network-utils)
@@ -461,18 +462,23 @@ COMMIT
                                  (postgresql-role
                                   (name "quasselcore")
                                   (create-database? #t))))
-                ,(service docker-service-type)
+                ,(service docker-service-type
+                          (docker-configuration
+                           (docker-cli docker-cli-with-docker-compose)))
                 ,(service quassel-service-type)
                 ,(service radicale-service-type
                           (radicale-configuration
-                           (config-file
-                            (plain-file "radicale.conf" "
-[server]
-hosts = localhost:5232
+                           (auth (radicale-auth-configuration (type 'http-x-remote-user)))
+                           (server (radicale-server-configuration (hosts (list "localhost:5232"))))
+;;                            (config-file
+;;                             (plain-file "radicale.conf" "
+;; [server]
+;; hosts = localhost:5232
 
-[auth]
-type = http_x_remote_user
-"))))
+;; [auth]
+;; type = http_x_remote_user
+;; "))
+                           ))
                             
                  ,(service caddy-service-type
                            (caddy-configuration

@@ -82,6 +82,7 @@ exec ~a $@\n"
 
 (define-public base-packages
   (list
+   fd
    rsync
    file
    elogind
@@ -382,13 +383,14 @@ exec ~a $@\n"
    (list rust-nightly "tools")
    (list rust-nightly "rust-src")
    (list rust-nightly "doc")
-   clang-17
-   clang-toolchain-17
-   clang-runtime-17
+   clang-18
+   llvm-18
+   clang-toolchain-18
+   clang-runtime-18
    ;; (list clang-14 "debug")
    libomp
    ;; (list clang-12 "extra") gone?
-   lld
+   lld-18
    gcc
    (list gcc "lib")
    gcc-toolchain ; keep this in sync withThe system toolchain, otherwise linking shit sometime breaks (fuck c++) 
@@ -475,8 +477,10 @@ exec ~a $@\n"
    python-numba
    python-zstandard
    python-lmfit
-   python-jax
-   python-jaxopt
+
+   ;; python-jax
+   ;; python-jaxopt
+
    ;; python-plotly
    python-zarr))
 

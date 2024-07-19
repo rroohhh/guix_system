@@ -20,6 +20,7 @@
   #:use-module (gnu packages rust-apps)
   #:use-module (gnu packages tmux)
   #:use-module (gnu packages wm)
+  #:use-module (gnu packages mail)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages terminals)
   #:use-module (gnu packages admin)
@@ -266,6 +267,12 @@ defaultBranch = main
 
 [url \"ssh://git@git.froheiyd.de:2222/\"]
     insteadOf = https://git.froheiyd.de/
+
+[sendemail]
+    sendmailcmd = " (file-append msmtp "/bin/msmtp") "
+    smtpserveroption = -a
+    smtpserveroption = gmail
+    confirm = always
 "))
 
 ;; [url \"git@github.com:\"]
@@ -289,6 +296,7 @@ monitor=desc:Fujitsu Siemens Computers GmbH A17-3A YE2P263316,preferred,4480x0,1
 monitor=desc:Lenovo Group Limited T27hv-20 V306V9KL,preferred,1920x0,1.0
 monitor=desc:Eizo Nanao Corporation EV2313W 42302061,preferred,0x0,1.0
 monitor=desc:Dell Inc. DELL U2711 G606T11C08AL,modeline 241.5 2560 2608 2640 2720 1440 1443 1448 1481 +HSync -VSync,1920x0,1.0
+monitor=desc:BNQ BenQ PD2700U ETH7N01993SL0,preferred,1920x0,1.5
 monitor=,preferred,auto,1.0
 
 $terminal = " ,(file-append alacritty "/bin/alacritty") "
@@ -392,11 +400,14 @@ gestures {
 misc {
     force_default_wallpaper = -1
     vfr = true
-    vrr = 1
+    vrr = 2
     disable_hyprland_logo = true
     background_color = rgb(" ,(string-trim (theme* bg) #\#) ")
     focus_on_activate = true
     key_press_enables_dpms = true
+}
+debug {
+disable_logs = false
 }
 
 $mainMod = SUPER
@@ -758,6 +769,9 @@ search_mode = 'fulltext'
 (define-public ra-multiplex-config
   (mixed-text-file "ra-multiplex-config" "instance_timeout = false\n"))
 
+(define-public mpv-config ; ~/.config/mpv/mpv.conf.
+  (mixed-text-file "mpv.conf" "hwdec=vaapi"))
+
 
 (define-public basic-program-configs
   (list
@@ -773,6 +787,7 @@ search_mode = 'fulltext'
    `(".config/hypr/hyprland.conf" ,hyprland-config)
    `(".config/waybar/config.jsonc" ,waybar-config)
    `(".config/waybar/style.css" ,waybar-style)
+   `(".config/mpv/mpv.conf" ,mpv-config)
    `(".config/pipewire/pipewire.conf.d/clockrate.conf" ,pipewire-conf)
    `(".cargo/config.toml" ,cargo-sccache-setup)
    ;; `(".bazelrc" ,bazel-settings) doesnt really work

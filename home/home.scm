@@ -11,6 +11,7 @@
              (gnu packages admin)
              (gnu packages emacs)
              (gnu packages wm)
+             (gnu packages xdisorg)
              (guix gexp)
              (guix channels)
              (guix transformations)
@@ -151,6 +152,35 @@ giving up.\n")
    (description
     "Run waybar.")))
 
+(define (wlsunset-shepherd-service config)
+  (list (shepherd-service
+         (documentation "wlsunset program.")
+         (provision '(wlsunset))
+         (requirement '(wayland-display))
+         (modules '((srfi srfi-1)
+                    (srfi srfi-26)))
+         (start #~(lambda _
+                    (fork+exec-command
+                     (list #$(file-append
+                              wlsunset
+                              "/bin/wlsunset") "-l" "49.4" "-L" "8.7")
+                     #:environment-variables
+                     (cons (string-append "WAYLAND_DISPLAY=" (getenv "WAYLAND_DISPLAY"))
+                           (remove (cut string-prefix? "WAYLAND_DISPLAY=" <>)
+                                   (default-environment-variables))))))
+         (stop #~(make-kill-destructor)))))
+
+(define home-wlsunset-service-type
+  (service-type
+   (name 'home-wlsunset)
+   (extensions (list (service-extension home-shepherd-service-type
+                                        wlsunset-shepherd-service)
+                     (service-extension home-wayland-service-type
+                                        (const #t))))
+   (default-value #f)
+   (description
+    "Run wlsunset.")))
+
 
 (define emacs-daemon-service
   (list (shepherd-service
@@ -183,6 +213,7 @@ giving up.\n")
    (service home-pipewire-service-type)
    (service home-swaync-service-type)
    (service home-waybar-service-type)
+   (service home-wlsunset-service-type)
                                         ;(service home-fontconfig-service-type)
 
    (simple-service 'extra-channels-service

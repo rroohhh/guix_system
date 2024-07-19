@@ -97,6 +97,9 @@
 (after! hl-line
   (set-face-attribute 'hl-line nil  :weight 'unspecified :background "midnight blue"))
 
+(after! hl-todo
+  (global-hl-todo-mode))
+
 (after! notmuch
   (modify-face 'notmuch-tag-unread "#b8bb26"))
 
