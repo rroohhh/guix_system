@@ -114,7 +114,7 @@
          (one-shot? #t)
          (start #~(lambda _
                    (invoke (string-append #$ethtool "/sbin/ethtool") "--set-eee" "enp0s25" "eee" "off")
-                   (invoke (string-append #$ethtool "/sbin/ethtool") "-K" "enp0s25" "tso" "off")
+                   (invoke (string-append #$ethtool "/sbin/ethtool") "-K" "enp0s25" "tso" "off" "tx" "off" "rx" "off" "gso" "off" "gro" "off" "sg" "off" "rxhash" "off" "rxvlan" "off" "txvlan" "off")
                    (invoke (string-append #$ethtool "/sbin/ethtool") "-A" "enp0s25" "tx" "off" "rx" "off" "autoneg" "off"))))))
 
 
@@ -312,11 +312,14 @@ allow_anonymous true"))))
                (service postgresql-service-type
                         (postgresql-configuration
                          (postgresql postgresql-13)))
-               (service wpa-supplicant-service-type)
-               (service network-manager-service-type
-                        (network-manager-configuration
-                         (dns "dnsmasq")
-                         (vpn-plugins (list network-manager-openvpn network-manager-openconnect network-manager-vpnc))))
+               (service dhcp-client-service-type
+                        (dhcp-client-configuration
+                          (interfaces (list "enp0s25"))))
+               ;; (service wpa-supplicant-service-type)
+               ;; (service network-manager-service-type
+               ;;          (network-manager-configuration
+               ;;           (dns "dnsmasq")
+               ;;           (vpn-plugins (list network-manager-openvpn network-manager-openconnect network-manager-vpnc))))
                (simple-service 'disable-eee shepherd-root-service-type
                                disable-eee-on-enp0s25))))))
 

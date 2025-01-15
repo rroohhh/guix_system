@@ -25,7 +25,7 @@
   #:use-module (gnu packages mail)
   #:use-module (gnu packages wm)
   #:use-module (guix transformations)
-  #:use-module (rosenthal packages wm)
+  #:use-module (home hy3)
   #:use-module (vup hwinfo)
   #:use-module (vup linux))
 
@@ -148,7 +148,7 @@
                 (terminal-switch #t)
                 (default-session-command
                   (greetd-agreety-session
-                   (command (file-append hyprland "/bin/Hyprland"))
+                   (command (file-append hyprland-0.46 "/bin/Hyprland"))
                    (command-args '()))))))))
 ;;                (greetd-terminal-configuration
 ;;                  (terminal-vt "1")

@@ -36,9 +36,9 @@
     ;; MGLRU
     "CONFIG_LRU_GEN_ENABLED=y"
     ;; more interactive scheduling
-    "CONFIG_SCHED_BORE=y"
+    ;; "CONFIG_SCHED_BORE=y"
     ;; lto
-    "CONFIG_LTO_CLANG_THIN=y"
+    ;; "CONFIG_LTO_NONE=y"
     ))
 
 
@@ -61,25 +61,25 @@
 (define* (make-vup-linux config)
  (let ((base
         (guix:customize-linux
-         #:linux linux-nonfree
+         #:linux linux-nonfree-stable
          #:extra-version "vup"
          #:configs config)))
      (package
        (inherit base)
        (inputs `(("cpio" ,cpio) ,@(package-inputs base)))
        (native-inputs (modify-inputs (package-native-inputs base)
-                        (prepend clang-17)
-                        (prepend lld-17)
+                        ;; (prepend clang-17)
+                        ;; (prepend lld-17)
                         (prepend python)))
-       (arguments
-        (substitute-keyword-arguments
-          (package-arguments base)
-          ((#:phases phases)
-           #~(modify-phases #$phases
-               (add-after 'unpack 'configure-llvm
-                 (lambda* _
-                   (setenv "LLVM" "1")
-                   (setenv "CC" "clang")))))))
+       ;; (arguments
+       ;;  (substitute-keyword-arguments
+       ;;    (package-arguments base)
+       ;;    ((#:phases phases)
+       ;;     #~(modify-phases #$phases
+       ;;         (add-after 'unpack 'configure-llvm
+       ;;           (lambda* _
+       ;;             (setenv "LLVM" "1")
+       ;;             (setenv "CC" "clang")))))))
        (source
         (origin
           (inherit (package-source base))
@@ -87,23 +87,24 @@
            (append
             (origin-patches (package-source base))
             (list
-             "thinlto-cachedir.patch"
              (origin
               (method url-fetch)
-              (uri "https://raw.githubusercontent.com/bkerler/mtkclient/main/Setup/Linux/kernelpatches/disable-usb-checks-5.10.patch")
+              (uri "https://raw.githubusercontent.com/bkerler/mtkclient/30b53348cc4ae73b88904bc96c33edff1f05e722/mtkclient/Setup/Linux/kernelpatches/disable-usb-checks-5.10.patch")
               (sha256 "12xsfnckpqzgcnxmd1xgpiibgxasl6k7ina0ckj3cn1dgy4g2lss"))
-             (origin
-              (method url-fetch)
-              (uri "https://raw.githubusercontent.com/cachyos/kernel-patches/fefa20cb087b5047c37c69e40eb4829c9aa91bb3/6.8/all/0001-cachyos-base-all.patch")
-              (sha256 "07i2c6mar86xfm946c6l61d7drf36bdvsc55fxn3zdpnn5map0ny"))
-             (origin
-              (method url-fetch)
-              (uri "https://raw.githubusercontent.com/cachyos/kernel-patches/fefa20cb087b5047c37c69e40eb4829c9aa91bb3/6.8/sched/0001-sched-ext.patch")
-              (sha256 "16rbk11s85rvnyasn1q51665ak2wj3v3hihmird50yds5d524xw2"))
-             (origin
-              (method url-fetch)
-              (uri "https://raw.githubusercontent.com/cachyos/kernel-patches/fefa20cb087b5047c37c69e40eb4829c9aa91bb3/6.8/sched/0001-bore-cachy-ext.patch")
-              (sha256 "157vrxsv90a8d7yrf1jjcd89i49h5lb5n34kmxlvdqs8kq4zmk6r"))
+             ;; "0001-cachyos-base-all.patch"
+             ;; (origin
+             ;;  (method url-fetch)
+             ;;  (uri "https://raw.githubusercontent.com/CachyOS/kernel-patches/7ae55e8c51f2e84c6c9429ed547f43af97f34754/6.10/all/0001-cachyos-base-all.patch")
+             ;;  (sha256 "05kvwy06r992x6jjp54ir5y7gfx31pbrjdrmqpxfgfq88jy81qlg"))
+             ;; (origin
+             ;;  (method url-fetch)
+             ;;  (uri "https://raw.githubusercontent.com/CachyOS/kernel-patches/7ae55e8c51f2e84c6c9429ed547f43af97f34754/6.10/sched/0001-sched-ext.patch")
+             ;;  (sha256 "04wzj6v0lfh41jk10mjrmjmf39pnhjflnr1abks9x7g0vrglry5m"))
+             ;; (origin
+             ;;  (method url-fetch)
+             ;;  (uri "https://raw.githubusercontent.com/CachyOS/kernel-patches/7ae55e8c51f2e84c6c9429ed547f43af97f34754/6.10/sched/0001-bore-cachy-ext.patch")
+             ;;  (sha256 "1ag84h7b5m685jjl4n21h61wy8x1vqhfxivis882cfgq256gd8w2"))
+             ;; "thinlto-cachedir.patch"
              ))))))))
 
 (define-public linux-nonfree/extra_config-x86

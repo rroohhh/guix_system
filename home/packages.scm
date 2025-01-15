@@ -3,6 +3,9 @@
   #:use-module (vup patches)
   #:use-module (gnu)
   #:use-module (guix packages)
+  #:use-module (guix utils)
+  #:use-module (guix gexp)
+  #:use-module (guix git-download)
   #:use-module (guix build-system trivial)
   #:use-module (nongnu packages mozilla)
   #:use-module ((gnu packages python-xyz) #:prefix guix:)
@@ -10,7 +13,6 @@
 
   #:use-module (vup rust-nightly)
   #:use-module (vup tmp)
-  #:use-module (vup python-xyz)
   #:use-module (vup qt-apps)
   #:use-module (vup root)
   #:use-module (vup mesa)
@@ -29,12 +31,13 @@
   ;; #:use-module (vup tmp)
   #:use-module (vup concourse)
   #:use-module (vup rust-apps)
-  #:use-module (rosenthal packages wm)
+
+  #:use-module (home hy3)
   #:use-module (guix-science packages python)
 
   #:use-module (games packages factorio))
 
-(use-package-modules task-management bash docker wm pciutils video xorg pulseaudio fonts messaging terminals rsync admin linux file flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation vim python-build emacs bootloaders cpio gnupg vnc vpn python-crypto sphinx build-tools image cups license bison flex graph gcc xiph hunspell telegram texlive rust)
+(use-package-modules task-management bash docker wm pciutils video xorg pulseaudio fonts messaging terminals rsync admin linux file flashing-tools freedesktop pv networking screen curl gnome image-viewers gl python python-xyz gdb graphviz engineering android pdf mpi wine mail tex compression irc vulkan ncurses pkg-config autotools pcre libusb boost commencement cmake xml qt glib fontutils ninja dns python-science code cryptsetup gimp maths libreoffice aspell man patchutils telephony node parallel photo game-development valgrind wget python-web serialization xdisorg java elf tls sqlite golang python-compression perl gtk version-control gstreamer llvm imagemagick ghostscript games bittorrent embedded libevent rust-apps nss aidc arcan inkscape prolog audio music crypto textutils electronics protobuf python-check check algebra astronomy sdl image-processing web lsof documentation vim python-build emacs bootloaders cpio gnupg vnc vpn python-crypto sphinx build-tools image cups license bison flex graph gcc xiph hunspell texlive rust telegram pretty-print cpp mold)
 
 
 (define firefox-fixed
@@ -79,6 +82,101 @@ exec ~a $@\n"
              ((firefox) out))
            #t))))))
 
+(define-public libcxx-19
+  (package
+   (inherit libcxx)
+    (version "19.1.0")
+    (source
+    (origin
+     (method git-fetch)
+     (uri (git-reference
+           (url "https://github.com/llvm/llvm-project")
+           (commit (string-append "llvmorg-" version))))
+     (file-name (git-file-name "llvm-project" version))
+     (sha256 (base32 "0rycy2n5kx7ys5vjshk44nb1yqnxv0mjfbss1fvna6i9pkqfh2gw"))))
+    (arguments (substitute-keyword-arguments
+     (package-arguments libcxx)
+     ((#:configure-flags flags)
+      #~(append #$flags (list "-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi;libunwind")))))
+    (native-inputs
+     (list clang-18 llvm-18 python))))
+
+(define libstdc++
+  ;; Libstdc++ matching the default GCC.
+  (make-libstdc++ gcc))
+
+(define libstdc++-headers
+  ;; XXX: This package is for internal use to work around
+  ;; <https://bugs.gnu.org/42392> (see above).  The main difference compared
+  ;; to the libstdc++ headers that come with 'gcc' is that <bits/c++config.h>
+  ;; is right under include/c++ and not under
+  ;; include/c++/x86_64-unknown-linux-gnu (aka. GPLUSPLUS_TOOL_INCLUDE_DIR).
+  (package
+    (inherit libstdc++)
+    (name "libstdc++-headers")
+    (outputs '("out"))
+    (build-system trivial-build-system)
+    (arguments
+     '(#:builder (let* ((out       (assoc-ref %outputs "out"))
+                        (libstdc++ (assoc-ref %build-inputs "libstdc++")))
+                   (mkdir out)
+                   (mkdir (string-append out "/include"))
+                   (symlink (string-append libstdc++ "/include")
+                            (string-append out "/include/c++")))))
+    (inputs `(("libstdc++" ,libstdc++)))
+    (synopsis "Headers of GNU libstdc++")))
+
+(define-public libstdc++-14
+  (let ((pkg (make-libstdc++ gcc-14)))
+    (package
+      (inherit pkg)
+    (arguments (substitute-keyword-arguments
+     (package-arguments pkg)
+     ((#:configure-flags flags)
+      #~(append #$flags (list "--enable-libstdcxx-threads=yes" "--enable-threads")))
+     ((#:phases phases)
+      #~(modify-phases #$phases
+         (add-after 'set-paths 'adjust-CPLUS_INCLUDE_PATH
+           (lambda* (#:key native-inputs inputs #:allow-other-keys)
+             ;; (format #t "hello ~a~%" inputs )
+               (setenv "CPLUS_INCLUDE_PATH"
+                       (string-join
+                        (cons (search-input-directory inputs "/include/bits")
+                              (string-split (getenv "CPLUS_INCLUDE_PATH") #\:))
+                        ":"))
+               (format #true
+                       "environment variable `CPLUS_INCLUDE_PATH' changed to ~a~%"
+                       (getenv "CPLUS_INCLUDE_PATH"))))
+         (replace 'hide-gcc-headers
+             (lambda* (#:key native-inputs inputs #:allow-other-keys)
+                        (let ((gcc (assoc-ref (or native-inputs inputs)
+                                              #$(if (%current-target-system)
+                                                    "cross-gcc"
+                                                    "gcc"))))
+                          ;; Fix a regression in GCC 11 where the GCC headers
+                          ;; shadows glibc headers when building libstdc++.  An
+                          ;; upstream fix was added in GCC 11.3.0, but it only
+                          ;; hides system include directories, not those on
+                          ;; CPLUS_INCLUDE_PATH.  See discussion at
+                          ;; <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=100017>
+                          ;; and the similar adjustment in GCC-FINAL.
+                          (substitute* (list "libstdc++-v3/src/c++17/Makefile.in" "libstdc++-v3/src/c++20/Makefile.in")
+                            (("AM_CXXFLAGS = ")
+                             (string-append #$(if (%current-target-system)
+                                                  "CROSS_CPLUS_INCLUDE_PATH = "
+                                                  "CPLUS_INCLUDE_PATH = ")
+                                            (string-join
+                                             (remove (cut string-prefix? gcc <>)
+                                                     (string-split
+                                                      (getenv
+                                                       #$(if (%current-target-system)
+                                                             "CROSS_CPLUS_INCLUDE_PATH"
+                                                             "CPLUS_INCLUDE_PATH"))
+                                                      #\:))
+                                             ":")
+                                            "\nAM_CXXFLAGS = "))))))))))
+      (native-inputs (append (list libstdc++ gcc-14 (list gcc-14 "lib"))  (package-native-inputs pkg))))))
+
 
 (define-public base-packages
   (list
@@ -113,6 +211,7 @@ exec ~a $@\n"
    mbuffer
    ; emacs-pgtk-native-comp
    emacs
+   emacs-lsp-booster
    zip
    lz4
    unzip
@@ -140,8 +239,8 @@ exec ~a $@\n"
 
    hunspell
    hunspell-dict-en-us
-   
-   vup:python-antfs-cli
+
+   ;; vup:python-antfs-cli
 
    masscan
    aircrack-ng
@@ -237,6 +336,7 @@ exec ~a $@\n"
    xdg-desktop-portal
    ;; xdg-desktop-portal-wlr
    xdg-desktop-portal-hyprland
+   xdg-desktop-portal-gtk ; for file chooser
                                         ; needed to choose the display with the above
    wofi
 
@@ -284,7 +384,7 @@ exec ~a $@\n"
    ;; sway
    ;; sway
    ;; hyprland
-   hyprland
+   hyprland-0.46
 
    swaynotificationcenter
 
@@ -318,12 +418,12 @@ exec ~a $@\n"
    ltrace
    strace
 
-   kicad 
+   kicad
    ; kicad-templates
    ; kicad-footprints
    ; kicad-packages3d
    ; kicad-symbols
-   horizon 
+   horizon
 
    meld
    cloc
@@ -358,11 +458,11 @@ exec ~a $@\n"
    umr
 
    ;; fpga
-   gtkwave
-   ;; vup:python-amaranth
-   ;; vup:python-amaranth-boards
-   ;; vup:python-amaranth-stdio
-   ;; vup:python-amaranth-soc
+   gtkwave-gtk4
+   vup:python-amaranth
+   vup:python-amaranth-boards
+   vup:python-amaranth-stdio
+   vup:python-amaranth-soc
    yosys-git
    ;; nextpnr ; tmp
    trellis
@@ -383,6 +483,9 @@ exec ~a $@\n"
    (list rust-nightly "tools")
    (list rust-nightly "rust-src")
    (list rust-nightly "doc")
+   fmt
+   libcxx-19
+   libstdc++-14
    clang-18
    llvm-18
    clang-toolchain-18
@@ -391,21 +494,32 @@ exec ~a $@\n"
    libomp
    ;; (list clang-12 "extra") gone?
    lld-18
-   gcc
-   (list gcc "lib")
-   gcc-toolchain ; keep this in sync withThe system toolchain, otherwise linking shit sometime breaks (fuck c++) 
-   (list gcc-toolchain "debug") ; keep this in sync withThe system toolchain, otherwise linking shit sometime breaks (fuck c++)
+   folly
+   ;; gcc
+   ;; (list gcc "lib")
+
+   gcc-toolchain-14
+   (list gcc-toolchain-14 "debug")
+   ;; gcc-toolchain ; keep this in sync withThe system toolchain, otherwise linking shit sometime breaks (fuck c++)
+   ;; (list gcc-toolchain "debug") ; keep this in sync withThe system toolchain, otherwise linking shit sometime breaks (fuck c++)
    ;; binutils-gold
+   mold
    gfortran-toolchain
    (list gfortran-toolchain "debug")
    perl
-   node-lts))
+   node-lts
+
+   ;; spice, etc stuff
+   xschem
+   ngspice
+   xyce-serial
+   ))
 
 (define-public laptop-packages
   (list
    powertop
    guvcview
-   powerstat))
+   ))
 
 (define-public android-packages
   (list
@@ -415,7 +529,7 @@ exec ~a $@\n"
   (list
    ;; python
    python-distro
-   python-librosa
+   ; python-librosa
    python-wrapper
    python-pyquery
    vup:python-flameprof
@@ -430,12 +544,12 @@ exec ~a $@\n"
    python-pandas
    python-tqdm
    python-scipy
-   vup:python-demjson
+   ;; vup:python-demjson
    python-matplotlib
    vup:python-quadpy
    python-fitsio
    vup:python-colorhash
-   vup:python-pint
+   python-pint
    python-requests
    python-ruamel.yaml
    python-toml
@@ -462,9 +576,8 @@ exec ~a $@\n"
    python-multiprocess
    vup:python-loky
    ;; python-billiard
-   vup:python-line-profiler                 ; - broken
+   ;; vup:python-line-profiler                 ; - broken
    python-tables
-   vup:pmbootstrap
    ;; pypy3 - broken
    python-dbus
    ;; python-mypy
@@ -556,7 +669,7 @@ exec ~a $@\n"
    cfitsio
    sdl2
    pciutils
-   glfw
+   glfw-3.4
    glu
    glew
    openblas
@@ -575,3 +688,5 @@ exec ~a $@\n"
 
 (define-public full-packages
   (append base-packages desktop-packages laptop-packages dev-dependencies python-packages dev-packages android-packages))
+
+;; libstdc++-14

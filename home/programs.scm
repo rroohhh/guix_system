@@ -13,7 +13,7 @@
   #:use-module (vup rust-apps)
   #:use-module (vup misc)
   #:use-module (vup atuin)
-  #:use-module (rosenthal packages wm)
+  ;; #:use-module (rosenthal packages wm)
   #:use-module (home lights)
   #:use-module (guix gexp)
   #:use-module (gnu packages ncurses)
@@ -49,9 +49,8 @@
                  '(#:local-build? #t
                    #:modules ((guix build utils)))))
 
-
 (define-public alacritty-config
-  (plain-file "alacritty.toml" (string-append "live_config_reload = true
+  (plain-file "alacritty.toml" (string-append "general.live_config_reload = true
 
 [env]
 TERM = \"xterm-256color\"
@@ -291,10 +290,10 @@ alias swaymsg=" (file-append sway "/bin/swaymsg") "
 
 (define-public hyprland-config
   (apply mixed-text-file `("hyprland.conf" "
-monitor=desc:AU Optronics 0x573D,preferred,1920x1440,1.0
-monitor=desc:Fujitsu Siemens Computers GmbH A17-3A YE2P263316,preferred,4480x0,1.0,transform,3
-monitor=desc:Lenovo Group Limited T27hv-20 V306V9KL,preferred,1920x0,1.0
-monitor=desc:Eizo Nanao Corporation EV2313W 42302061,preferred,0x0,1.0
+monitor=desc:AUO 0x573D,preferred,1920x1440,1.0
+monitor=desc:FUS A17-3A YE2P263316,preferred,4480x0,1.0,transform,3
+monitor=desc:LEN T27hv-20 V306V9KL,preferred,1920x0,1.0
+monitor=desc:ENC EV2313W 42302061,preferred,0x0,1.0
 monitor=desc:Dell Inc. DELL U2711 G606T11C08AL,modeline 241.5 2560 2608 2640 2720 1440 1443 1448 1481 +HSync -VSync,1920x0,1.0
 monitor=desc:BNQ BenQ PD2700U ETH7N01993SL0,preferred,1920x0,1.5
 monitor=,preferred,auto,1.0
@@ -343,6 +342,11 @@ input {
     sensitivity = 0.2
 }
 
+device {
+    name = tpps/2-elan-trackpoint
+    sensitivity = 0.5
+}
+
 general {
     gaps_in = 3
     gaps_out = 5
@@ -364,10 +368,6 @@ decoration {
         size = 3
         passes = 1
     }
-
-    drop_shadow = false
-    shadow_range = 4
-    shadow_render_power = 3
 }
 
 animations {
@@ -426,7 +426,7 @@ bind = $mainMod, v, hy3:makegroup,opposite,
 bind = $mainMod, e, hy3:changegroup,opposite,
 
 bind = $mainMod, p, exec, pkill -USR1 waybar
-bind = $mainMod, u, exec, sleep 1; " ,(file-append hyprland "/bin/hyprctl") " dispatch dpms off
+bind = $mainMod, u, exec, sleep 1; " ,(file-append hyprland-0.46 "/bin/hyprctl") " dispatch dpms off
 bind = $mainMod, k, exec, " ,(file-append swaynotificationcenter "/bin/swaync-client") " -t
 
 bind=,XF86MonBrightnessDown,exec," ,(file-append brightnessctl "/bin/brightnessctl") " -e set 3%-
@@ -770,7 +770,8 @@ search_mode = 'fulltext'
   (mixed-text-file "ra-multiplex-config" "instance_timeout = false\n"))
 
 (define-public mpv-config ; ~/.config/mpv/mpv.conf.
-  (mixed-text-file "mpv.conf" "hwdec=vaapi"))
+  (mixed-text-file "mpv.conf" "hwdec=vaapi
+ytdl-format=bestvideo[height<=1080]+bestaudio/best"))
 
 
 (define-public basic-program-configs

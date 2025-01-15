@@ -79,6 +79,7 @@
          (documentation "bme680 reader")
          (requirement '(networking))
          (provision '(bme680))
+         (modules (append %default-modules (list '(ice-9 textual-ports))))
          (start #~ (lambda _
                      (use-modules (ice-9 textual-ports))
                      (let* ((env-vars (list

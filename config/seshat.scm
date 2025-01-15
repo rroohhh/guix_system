@@ -381,6 +381,8 @@ paths:
   (operating-system
    (inherit base-system-config)
 
+   ;; (packages (append (operating-system-packages base-system-config) (list docker-cli-with-docker-compose)))
+
    (hosts-file etc-hosts-file)
 
    (users (append (map (lambda (user)
@@ -462,6 +464,7 @@ COMMIT
                                  (postgresql-role
                                   (name "quasselcore")
                                   (create-database? #t))))
+                ,(service containerd-service-type)
                 ,(service docker-service-type
                           (docker-configuration
                            (docker-cli docker-cli-with-docker-compose)))

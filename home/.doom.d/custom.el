@@ -7,7 +7,21 @@
    '("467dc6fdebcf92f4d3e2a2016145ba15841987c71fbe675dcfe34ac47ffb9195" "e3daa8f18440301f3e54f2093fe15f4fe951986a8628e98dcd781efbec7a46f2" default))
  '(magit-todos-insert-after '(bottom) nil nil "Changed by setter of obsolete option `magit-todos-insert-at'")
  '(safe-local-variable-values
-   '((geiser-guile-binary "guix" "repl")
+   '((eval with-eval-after-load 'tempel
+      (if
+          (stringp tempel-path)
+          (setq tempel-path
+                (list tempel-path)))
+      (let
+          ((guix-tempel-snippets
+            (concat
+             (expand-file-name "etc/snippets/tempel"
+                               (locate-dominating-file default-directory ".dir-locals.el"))
+             "/*.eld")))
+        (unless
+            (member guix-tempel-snippets tempel-path)
+          (add-to-list 'tempel-path guix-tempel-snippets))))
+     (geiser-guile-binary "guix" "repl")
      (geiser-insert-actual-lambda)
      (eval ignore-errors
       (require 'whitespace)

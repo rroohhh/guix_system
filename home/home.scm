@@ -15,8 +15,8 @@
              (guix gexp)
              (guix channels)
              (guix transformations)
-             (rosenthal packages wm)
              (home config)
+             (home hy3)
              (home packages)
              (home programs)
              (vup rust-nightly))
@@ -136,7 +136,7 @@ giving up.\n")
                     (srfi srfi-26)))
          (start #~(lambda _
                     (system*
-                     #$(file-append hyprland "/bin/hyprctl") "-i" "0" "dispatch" "exec" #$(file-append waybar "/bin/waybar"))
+                     #$(file-append hyprland-0.46 "/bin/hyprctl") "-i" "0" "dispatch" "exec" #$(file-append waybar "/bin/waybar"))
                     #t))
          (stop #~(lambda _
                    (system* "pkill" "waybar"))))))
@@ -228,7 +228,7 @@ giving up.\n")
                           (branch "master"))
                          (channel
                           (name 'guix-science)
-                          (url "https://github.com/guix-science/guix-science.git")
+                          (url "https://codeberg.org/guix-science/guix-science")
                           (branch "master")
                           (introduction
                            (make-channel-introduction
@@ -253,16 +253,7 @@ giving up.\n")
                            (make-channel-introduction
                             "897c1a470da759236cc11798f4e0a5f7d4d59fbc"
                             (openpgp-fingerprint
-                             "2A39 3FFF 68F4 EF7A 3D29  12AF 6F51 20A0 22FB B2D5"))))
-                         (channel
-                          (name 'rosenthal)
-                          (url "https://github.com/rakino/rosenthal")
-                          (branch "trunk")
-                          (introduction
-                           (make-channel-introduction
-                            "7677db76330121a901604dfbad19077893865f35"
-                            (openpgp-fingerprint
-                             "13E7 6CD6 E649 C28C 3385  4DF5 5E5A A665 6149 17F7"))))))
+                             "2A39 3FFF 68F4 EF7A 3D29  12AF 6F51 20A0 22FB B2D5"))))))
 
 
    (service home-inputrc-service-type

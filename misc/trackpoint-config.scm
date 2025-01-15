@@ -1,4 +1,6 @@
 (define-module (misc trackpoint-config)
+  #:use-module (guix gexp)
+  #:use-module (gnu services)
   #:use-module (guix packages)
   #:use-module (guix build-system trivial)
   #:use-module ((guix licenses) #:prefix license:))
@@ -22,3 +24,21 @@
     (description "my trackpoint configuration")
     (license license:gpl3)
     (home-page #f)))
+
+(define %libinput-trackpoint-quirk-config
+  `("libinput/local-overrides.quirks"
+    ,(plain-file "local-overrides.quirks"
+                 "[Lenovo P14s Gen 1 AMD Trackpoint]
+MatchUdevType=pointingstick
+MatchName=*TPPS/2 Elan TrackPoint*
+MatchDMIModalias=dmi:*svnLENOVO:*:pvrThinkPadP14sGen1*
+AttrTrackpointMultiplier=1.0")))
+
+(define-public trackpoint-quirk-service-type
+  (service-type
+    (name 'trackpoint-quirk)
+    (default-value '())
+    (description "trackpoint quirk override")
+    (extensions
+      (list (service-extension etc-service-type
+                               (const (list %libinput-trackpoint-quirk-config)))))))

@@ -40,7 +40,7 @@
 (define-public zfs-2.2
   (package
    (inherit zfs)
-   (version "2.2.4")
+   (version "2.2.6")
    (source
     (origin
      (patches (list "zfs_no_init_conf.patch"))
@@ -49,7 +49,7 @@
                          "/download/zfs-" version
                          "/zfs-" version ".tar.gz"))
      (sha256
-      (base32 "1h0yqchirzsn2gll1w2gclb13hr8511z67lf85cigm43frgr144p"))))
+      (base32 "19x2a8k25i3y6nr7nx5aaqrpnp55vjmrw86p06zpgpf578804bn9"))))
 
    (native-inputs (list autoconf automake libtool pkg-config clang-17 lld-17))
    (arguments
@@ -68,10 +68,10 @@
             (lambda* (#:key inputs #:allow-other-keys)
               (substitute* "configure"
                 (("-/bin/sh") (string-append "-" (which "sh"))))
-              (setenv "KBUILD_LDFLAGS=" "--thinlto-cache-dir=/tmp/.thinlto-cache")
+              ;; (setenv "KBUILD_LDFLAGS=" "--thinlto-cache-dir=/tmp/.thinlto-cache")
               (invoke "./configure"
-                      "KERNEL_LLVM=1"
-                      "KERNEL_CC=clang"
+                      ;; "KERNEL_LLVM=1"
+                      ;; "KERNEL_CC=clang"
                       "--with-config=all"
                       (string-append "--prefix=" #$output)
                       (string-append "--with-dracutdir=" #$output

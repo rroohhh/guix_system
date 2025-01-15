@@ -94,6 +94,7 @@
   \"fixed-cidr\": \"172.39.1.0/25\"
 }
 "))
+    ,(service containerd-service-type)
     ,(service docker-service-type)
     ,(service cups-pk-helper-service-type)
 
@@ -107,7 +108,8 @@
 
     ,(service nix-service-type
               (nix-configuration
-               (build-sandbox-items '("/bin/sh"))))
+               (build-sandbox-items '("/bin/sh"))
+               (extra-config '("experimental-features = nix-command flakes"))))
 
     ,(service cups-service-type
               (cups-configuration
@@ -130,7 +132,7 @@
     ,(simple-service 'brightnessctl-udev udev-service-type (list brightnessctl))
     ,(service sane-service-type)
 
-    ,(pam-limits-service
+    ,(service pam-limits-service-type
       (list
        (pam-limits-entry "robin" 'both 'nofile 1000000)
        (pam-limits-entry "@audio" 'both 'rtprio 99)

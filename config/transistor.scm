@@ -68,6 +68,7 @@
       (bluetooth-service)
 
       (service hrdj-device-service-type)
+      (service trackpoint-quirk-service-type)
 
       (service tlp-service-type
                (tlp-configuration
