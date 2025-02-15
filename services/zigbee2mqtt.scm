@@ -65,11 +65,6 @@
         (mkdir-p state-dir)
         (chown state-dir (passwd:uid user) (passwd:gid user)))))
 
-(define* (zigbee2mqtt-log-rotate _)
-  (list
-    (log-rotation
-     (files (list zigbee2mqtt-log-file)))))
-
 (define zigbee2mqtt-service-type
   (service-type
    (name 'zigbee2mqtt)
@@ -82,6 +77,4 @@
           (service-extension account-service-type
                              zigbee2mqtt-accounts)
           (service-extension activation-service-type
-                             zigbee2mqtt-activation)
-          (service-extension rottlog-service-type
-                             zigbee2mqtt-log-rotate)))))
+                             zigbee2mqtt-activation)))))

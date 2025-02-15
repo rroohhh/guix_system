@@ -51,11 +51,6 @@
       (home-directory "/var/empty")
       (shell (file-append shadow "/sbin/nologin"))))))
 
-(define* (mosquitto-log-rotate _)
-  (list
-    (log-rotation
-     (files (list "/var/log/mosquitto.log")))))
-
 (define mosquitto-service-type
   (service-type
    (name 'mosquitto)
@@ -65,6 +60,4 @@
     (list (service-extension shepherd-root-service-type
                              mosquitto-shepherd-service)
           (service-extension account-service-type
-                             mosquitto-accounts)
-          (service-extension rottlog-service-type
-                             mosquitto-log-rotate)))))
+                             mosquitto-accounts)))))

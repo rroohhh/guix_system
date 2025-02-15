@@ -180,15 +180,6 @@
                                           `(,(car user) ,(local-file (cadddr user)))) extra-users)
                                    ssh-default-authorized-keys)))))
               (networking-for host-name)
-              (map (lambda (name)
-                     (simple-service (symbol-append 'rotate-log (string->symbol name))
-                      rottlog-service-type
-                      (list
-                       (log-rotation
-                        (files (list name))))))
-                   (list
-                    "/var/log/mcron.log" "/var/log/caddy.log" "/var/log/telegraf.log" "/var/log/containerd.log"
-                    "/var/log/influxdb.log" "/var/log/docker.log"))
               (list
                (service influxdb-service-type
                         (influxdb-configuration
@@ -330,7 +321,7 @@ allow_anonymous true"))))
        (configuration
         (machine-ssh-configuration
          ;; (host-name "192.168.3.4")
-         (host-name "mel")
+         (host-name "mel.local")
          (system "x86_64-linux")
          (identity "/home/robin/.ssh/id_ed25519")
          (host-key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII5NlwiXunTqXKa72M3Sa4wy0yDwdG7+lA9eJBBTTDlN")))))

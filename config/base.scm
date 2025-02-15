@@ -112,18 +112,8 @@
                (host "0.0.0.0")
                (port 12734)
                (advertise? #t)))
+    ;; ,(service log-rotation-service-type)
     ,@(modify-services %base-services
-        (rottlog-service-type config =>
-                              (rottlog-configuration
-                               (inherit config)
-                               (rc-file
-                                (computed-file
-                                 "rottlog-rc"
-                                 #~(call-with-output-file (string-append #$output)
-                                       (lambda (port)
-                                         (display (call-with-input-file #$(file-append rottlog "/etc/rc") (@ (ice-9 textual-ports) get-string-all)) port)
-                                         (display "nomissingok\n" port) ;; this is somehow inverted?
-                                    ))))))
         (guix-service-type config =>
                 (guix-configuration
                   (inherit config)

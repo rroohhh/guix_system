@@ -115,7 +115,7 @@
               (cups-configuration
                (web-interface? #t)))
 
-    ,(udisks-service)
+    ,(service udisks-service-type)
 
     ,(service earlyoom-service-type)
 

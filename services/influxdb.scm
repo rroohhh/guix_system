@@ -288,6 +288,6 @@
                                           telegraf-accounts)
                        (service-extension activation-service-type
                                           telegraf-activation)
-                       (service-extension setuid-program-service-type
+                       (service-extension privileged-program-service-type
                                           (lambda _
                                             (list (file-like->setuid-program (file-append smartmontools "/sbin/smartctl")))))))))

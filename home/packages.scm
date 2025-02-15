@@ -463,6 +463,7 @@ exec ~a $@\n"
    vup:python-amaranth-boards
    vup:python-amaranth-stdio
    vup:python-amaranth-soc
+   ;; yosys
    yosys-git
    ;; nextpnr ; tmp
    trellis
@@ -483,6 +484,7 @@ exec ~a $@\n"
    (list rust-nightly "tools")
    (list rust-nightly "rust-src")
    (list rust-nightly "doc")
+
    fmt
    libcxx-19
    libstdc++-14

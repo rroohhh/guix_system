@@ -88,16 +88,6 @@
                                 (list trackpoint-udev-config titan-key-udev-config ftdi-udev-config))))))
 
         (networking-for host-name)
-        (map (lambda (name)
-               (simple-service (symbol-append 'rotate-log (string->symbol name))
-                rottlog-service-type
-                (list
-                 (log-rotation
-                  (files (list name))))))
-             (list
-              "/var/log/mcron.log" "/var/log/caddy.log" "/var/log/telegraf.log" "/var/log/containerd.log"
-              "/var/log/influxdb.log" "/var/log/docker.log"))
-
         (list
          (service zfs-service-type
              (zfs-configuration
@@ -109,7 +99,7 @@
               (list zfs-with-vup-kernel "module"))
              (operating-system-kernel-loadable-modules base-desktop-system-config)))
 
-         (bluetooth-service)
+         (service bluetooth-service-type)
 
          (service telegraf-service-type
                   (telegraf-configuration

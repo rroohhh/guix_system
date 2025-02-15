@@ -383,7 +383,7 @@ paths:
 
    ;; (packages (append (operating-system-packages base-system-config) (list docker-cli-with-docker-compose)))
 
-   (hosts-file etc-hosts-file)
+   ;; (hosts-file etc-hosts-file)
 
    (users (append (map (lambda (user)
                          (user-account
@@ -511,15 +511,6 @@ COMMIT
                                       (string-append #$sqlite "/bin/sqlite3 /var/vaultwarden/db.sqlite3 '.backup /var/vaultwarden/db-backup.sqlite3'")
                                       #:user "vaultwarden")))))
                  ,@(networking-for host-name)
-                 ,@(map (lambda (name)
-                     (simple-service (symbol-append 'rotate-log (string->symbol name))
-                      rottlog-service-type
-                      (list
-                       (log-rotation
-                        (files (list name))))))
-                    (list
-                     "/var/log/mcron.log" "/var/log/caddy.log" "/var/log/telegraf.log" "/var/log/containerd.log"
-                     "/var/log/influxdb.log" "/var/log/docker.log"))
                  ,@(modify-services
                     base-services
                     (openssh-service-type

@@ -1,6 +1,7 @@
 (define-module (services bme680)
   #:use-module (misc util)
   #:use-module (gnu packages python-xyz)
+  #:use-module (gnu packages python-build)
   #:use-module (gnu services)
   #:use-module (gnu services admin)
   #:use-module (gnu services shepherd)
@@ -19,6 +20,7 @@
     (local-file "./bme680" #:recursive? #t))
    (arguments '(#:tests? #f))
    (propagated-inputs (list python-pyserial))
+   (native-inputs (list python-setuptools python-wheel))
    (build-system pyproject-build-system)
    (home-page "--")
    (synopsis "card10 bme680 reader")
@@ -67,11 +69,6 @@
 
 (define bme680-log-file "/var/log/bme680.log")
 
-(define* (bme680-log-rotate _)
-  (list
-    (log-rotation
-     (files (list bme680-log-file)))))
-
 (define (bme680-shepherd-service config)
   "Return a <shepherd-service> for bme680 with CONFIG."
 
@@ -101,6 +98,4 @@
                  "run bme680 reader")
                 (extensions
                  (list (service-extension shepherd-root-service-type
-                                          bme680-shepherd-service)
-                       (service-extension rottlog-service-type
-                                          bme680-log-rotate)))))
+                                          bme680-shepherd-service)))))

@@ -65,7 +65,7 @@
                                             (udev-configuration-rules config)
                                             (list trackpoint-udev-config))))))
      (list
-      (bluetooth-service)
+      (service bluetooth-service-type)
 
       (service hrdj-device-service-type)
       (service trackpoint-quirk-service-type)
@@ -76,10 +76,6 @@
                 (start-charge-thresh-bat1 75)
                 (stop-charge-thresh-bat0 80)
                 (stop-charge-thresh-bat1 80)))
-
-      (simple-service 'rotate-mcron-log
-                      rottlog-service-type
-                      (list (log-rotation (files '("/var/log/mcron.log")))))
 
       (service mcron-service-type
                (mcron-configuration
