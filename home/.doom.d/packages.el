@@ -15,6 +15,9 @@
 
 ;; (package! org-caldav
 ;;   :recipe (:host github :repo "rroohhh/org-caldav" :branch "master"))
+;;
+(package! zotxt
+  :recipe (:host github :repo "egh/zotxt-emacs" :branch "master"))
 
 (package! org-caldav
   :recipe (:host github :repo "jackkamm/org-caldav" :branch "master"))

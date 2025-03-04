@@ -1,15 +1,16 @@
 (define-module (config linux)
-  #:use-module (vup linux)
   #:use-module (ice-9 match)
   #:use-module (guix packages)
   #:use-module (guix utils)
   #:use-module (guix download)
+  #:use-module (guix git-download)
   #:use-module (guix gexp)
+  #:use-module ((guix licenses) #:prefix license:)
+  #:use-module (guix build-system trivial)
   #:use-module ((gnu packages linux) #:prefix guix:)
   #:use-module (gnu packages cpio)
   #:use-module (gnu packages python)
   #:use-module (gnu packages llvm))
-
 
 (define linux-common
   '("CONFIG_UPROBE_EVENTS=y"
@@ -107,8 +108,86 @@
              ;; "thinlto-cachedir.patch"
              ))))))))
 
+(define (linux-nonfree-urls version)
+  "Return a list of URLs for Linux-Nonfree VERSION."
+  (list (string-append
+         "https://www.kernel.org/pub/linux/kernel/"
+         "v" (version-prefix version 1) ".x/"
+         "linux-" version ".tar.xz")))
+
+(define linux-nonfree-stable
+  (let* ((version "6.12.16"))
+    (package
+      (inherit guix:linux-libre)
+      (name "linux-nonfree-stable")
+      (version version)
+      (source (origin
+                (method url-fetch)
+                (uri (linux-nonfree-urls version))
+                (sha256
+                 (base32
+                  "1i3xkprqsd3yqbai1pbgrszcg6ycy5rwpblzzw5m4lagd4m3d0az"))))
+      (synopsis "Mainline Linux kernel, nonfree binary blobs included.")
+      (description "Linux is a kernel.")
+      (license license:gpl2)
+      (home-page "https://kernel.org/"))))
+
+(define linux-firmware-version "20250211")
+(define (linux-firmware-source version)
+  (origin
+    (method git-fetch)
+    (uri (git-reference
+          (url (string-append "https://git.kernel.org/pub/scm/linux/kernel"
+                              "/git/firmware/linux-firmware.git"))
+          (commit version)))
+    (file-name (git-file-name "linux-firmware" (string-take version 8)))
+    (sha256
+     (base32
+      "090wx40ybgl1cv6mamsmnr2i8a17skwf1pqq5i4wpx7w7qrw4ib4"))))
+
+(define-public linux-firmware-nonfree
+  (package
+    (name "linux-firmware-nonfree")
+    (version linux-firmware-version)
+    (source (linux-firmware-source version))
+    (build-system trivial-build-system)
+    (arguments
+     `(#:modules ((guix build utils))
+       #:builder (begin
+                   (use-modules (guix build utils))
+                   (let ((source (assoc-ref %build-inputs "source"))
+                         (fw-dir (string-append %output "/lib/firmware/")))
+                     (mkdir-p fw-dir)
+                     (copy-recursively source fw-dir)
+                     #t))))
+    (home-page "")
+    (synopsis "Non-free firmware for Linux")
+    (description "Non-free firmware for Linux")
+    ;; FIXME: What license?
+    (license (license:non-copyleft "https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git;a=blob_plain;f=LICENCE.radeon_firmware;hb=HEAD"))))
+
+(define-public perf-nonfree
+  (package
+    (inherit guix:perf)
+    (name "perf-nonfree")
+    (version (package-version linux-nonfree-stable))
+    (source (package-source linux-nonfree-stable))
+    (license (package-license linux-nonfree-stable))))
+
+(define-public cpupower-nonfree
+  (package
+    (inherit guix:cpupower)
+    (name "cpupower-nonfree")
+    (version (package-version linux-nonfree-stable))
+    (source (package-source linux-nonfree-stable))
+    (license (package-license linux-nonfree-stable))
+    (arguments (substitute-keyword-arguments
+     (package-arguments guix:cpupower)
+     ((#:make-flags flags)
+      #~(append #$flags (list (string-append "LDFLAGS=-Wl,-rpath=" #$output "/lib"))))))))
+
 (define-public linux-nonfree/extra_config-x86
   (make-vup-linux linux-x86))
 
-(define-public linux-nonfree/extra_config-arm
-  (make-vup-linux linux-arm))
+;; (define-public linux-nonfree/extra_config-arm
+;;   (make-vup-linux linux-arm))

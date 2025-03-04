@@ -18,16 +18,16 @@
 (define-public boulderhaus-booking-webui
   (package
     (name "boulderhaus-booking-webui")
-    (version "0.0.1-03308eb")
+    (version "0.0-1.4c46c7e")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/rroohhh/boulderhaus_booking")
-                    (commit "03308eb72ce6be9845ef91bc2a6c3140354f76bb")))
+                    (commit "4c46c7ef1802dfed9bca6151cdf84eecaffba3f1")))
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1c7115z6k5cmpdv356dwpya3rlry08idzlj33z7v3j5criqs7r6l"))))
+                "15h12nz8cwm8xmraybvpfaqyssqm39f2y29vbpxrcgp5iwx7hjdq"))))
     (build-system copy-build-system)
     (synopsis "Boulderhaus Heidelberg booking webui")
     (description "Boulderhaus Heidelberg booking webui")
@@ -37,7 +37,7 @@
 (define-public boulderhaus-booking-server
   (package
     (name "boulderhaus-booking-server")
-    (version "0.0.1-4c46c7e")
+    (version "0.0-0.4c46c7e")
     (source (origin
               (method git-fetch)
               (uri (git-reference

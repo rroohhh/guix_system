@@ -10,6 +10,7 @@
   #:use-module (guix download)
   #:use-module (guix git-download)
   #:use-module (guix gexp)
+  #:use-module (guix utils)
   #:use-module (guix build-system meson)
   #:use-module (guix packages))
 
@@ -17,7 +18,7 @@
 (define-public libpanel-1.3
   (package
     (inherit libpanel)
-    (version "1.3.0")
+    (version "1.7.0")
     (source
      (origin
        (method git-fetch)
@@ -26,18 +27,18 @@
              (commit version)))
        (file-name (git-file-name "libpanel" version))
        (sha256
-        (base32 "0sp0pkccxpkrjk2bl1q12xl5w5hal015z68c507zym943skd28ry"))))))
+        (base32 "09lgzjydnahi14xn5rchb91d6m3idzgb68xm3lklwnkdda7dz0w8"))))))
 
 (define-public sysprof-new
   (package
     (name "sysprof")
-    (version "46")
+    (version "46.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "mirror://gnome/sources/sysprof/"
-                           version "/"
-                           "sysprof-" version ".0.tar.xz"))
+                           (version-major version) "/"
+                           "sysprof-" version ".tar.xz"))
        (sha256
         (base32 "0xnil6ian02mlgdq9s5rwd4l5vp6ywyp4nm08q4lwgmbxdspxakk"))))
     (build-system meson-build-system)

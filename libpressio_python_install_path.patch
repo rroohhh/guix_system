@@ -1,0 +1,30 @@
+diff --git a/tools/swig/CMakeLists.txt b/tools/swig/CMakeLists.txt
+index 9e6a7bc..6c29e8f 100644
+--- a/tools/swig/CMakeLists.txt
++++ b/tools/swig/CMakeLists.txt
+@@ -7,7 +7,7 @@ if(SWIG_FOUND AND PYTHON3_FOUND)
+ 
+   set(CMAKE_SWIG_FLAGS "-doxygen")
+   if(NOT LIBPRESSIO_PYTHON_SITELIB)
+-    set(LIBPRESSIO_PYTHON_SITELIB ${Python3_SITELIB} CACHE PATH "path to install python libraries to")
++    set(LIBPRESSIO_PYTHON_SITELIB "lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages/")
+   endif()
+   function(build_pressio_swig_module)
+     get_filename_component(filelibname ${ARGV0} NAME_WE)
+diff --git a/tools/swig/pypressio.h b/tools/swig/pypressio.h
+index 3f6458e..358fa28 100644
+--- a/tools/swig/pypressio.h
++++ b/tools/swig/pypressio.h
+@@ -234,10 +234,10 @@ pressio_metrics* new_metrics(struct pressio* library, std::vector<std::string> m
+ }
+ 
+ int compressor_compress_many(struct pressio_compressor* compressor, std::vector<struct pressio_data*> const& inputs, std::vector<struct pressio_data*>& outputs) {
+-    return (*compressor)->compress_many(inputs.begin(), inputs.end(), outputs.begin(), outputs.end());
++    return (*compressor)->compress_many(&*inputs.begin(), &*inputs.end(), &*outputs.begin(), &*outputs.end());
+ }
+ int compressor_decompress_many(struct pressio_compressor* compressor, std::vector<struct pressio_data*> const& inputs, std::vector<struct pressio_data*>& outputs) {
+-    return (*compressor)->decompress_many(inputs.begin(), inputs.end(), outputs.begin(), outputs.end());
++    return (*compressor)->decompress_many(&*inputs.begin(), &*inputs.end(), &*outputs.begin(), &*outputs.end());
+ }
+ 
+ void options_set_strings(pressio_options* options, std::string const& key, std::vector<std::string> const& values){

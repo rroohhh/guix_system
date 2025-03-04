@@ -12,19 +12,19 @@
   (package
     (inherit docker-compose)
     (version "2.24.5")
-    (source (origin
-              (method url-fetch)
-              (uri
-               (let ((arch (match (or (%current-target-system) (%current-system))
-                             ("aarch64-linux" "aarch64")
-                             ("armhf-linux" "armv7")
-                             (_ "x86_64"))))
-                 (string-append
-                  "https://github.com/docker/compose/releases/download/v"
-                  version "/docker-compose-linux-" arch)))
-              (sha256
-               (base32
-                "1qdklhrxm3x7ybhmaycag4q7qqn7snc0yjd1pl5h95fks7hmndcl"))))
+    (source
+     (origin
+       (method url-fetch)
+       (uri (let ((arch (match (or (%current-target-system)
+                                   (%current-system))
+                          ("aarch64-linux" "aarch64")
+                          ("armhf-linux" "armv7")
+                          (_ "x86_64"))))
+              (string-append
+               "https://github.com/docker/compose/releases/download/v" version
+               "/docker-compose-linux-" arch)))
+       (sha256
+        (base32 "1qdklhrxm3x7ybhmaycag4q7qqn7snc0yjd1pl5h95fks7hmndcl"))))
     (build-system copy-build-system)
     (arguments
      (list
@@ -55,17 +55,20 @@
      (substitute-keyword-arguments (package-arguments docker-cli)
        ((#:phases phases)
         #~(modify-phases #$phases
-           (add-after 'unpack 'patch-plugin-path
-             (lambda _
-               (substitute* "src/github.com/docker/cli/cli-plugins/manager/manager_unix.go"
-                 (("/usr/libexec/docker/cli-plugins")
-                  (string-append #$output "/libexec/docker/cli-plugins")))))
-           (add-after 'install 'symlink-plugin
-             (lambda _
-               (let ((plugins-directory
-                      (string-append #$output "/libexec/docker/cli-plugins")))
-                 (mkdir-p plugins-directory)
-                 (symlink (string-append #$(this-package-input "docker-compose")
-                                         "/libexec/docker/cli-plugins/docker-compose")
-                          (string-append plugins-directory "/docker-compose")))))))))
+            (add-after 'unpack 'patch-plugin-path
+              (lambda _
+                (substitute* "src/github.com/docker/cli/cli-plugins/manager/manager_unix.go"
+                  (("/usr/libexec/docker/cli-plugins")
+                   (string-append #$output "/libexec/docker/cli-plugins")))))
+            (add-after 'install 'symlink-plugin
+              (lambda _
+                (let ((plugins-directory (string-append #$output
+                                          "/libexec/docker/cli-plugins")))
+                  (mkdir-p plugins-directory)
+                  (symlink (string-append #$(this-package-input
+                                             "docker-compose")
+                            "/libexec/docker/cli-plugins/docker-compose")
+                           (string-append plugins-directory "/docker-compose")))))))))
     (inputs (list docker-compose-plugin))))
+
+docker-cli-with-docker-compose

@@ -12,28 +12,28 @@
   #:use-module (gnu packages python-build)
   #:use-module (gnu packages python-science)
   #:use-module (vup misc)
-  #:use-module ((guix licenses) #:prefix license:))
+  #:use-module ((guix licenses)
+                #:prefix license:))
 
 (define-public tvm
   (let* ((version "0.10.0"))
     (package
       (name "tvm")
       (version version)
-      (source (origin
-                (method url-fetch)
-                (uri (string-append
-                      "https://github.com/apache/tvm/releases/download/v"
-                      version "/apache-tvm-src-v" version ".rc0.tar.gz"))
-                (sha256
-                 (base32
-                  "1r7wn2sjxk7vzdyg63zgm9lnr901px58ckx3qwpv6dknhjzh381d"))))
+      (source
+       (origin
+         (method url-fetch)
+         (uri (string-append
+               "https://github.com/apache/tvm/releases/download/v" version
+               "/apache-tvm-src-v" version ".rc0.tar.gz"))
+         (sha256
+          (base32 "1r7wn2sjxk7vzdyg63zgm9lnr901px58ckx3qwpv6dknhjzh381d"))))
       (build-system cmake-build-system)
       (arguments
        '(#:configure-flags '("-DUSE_VULKAN=ON" "-DUSE_KHRONOS_SPIRV=ON"
                              "-DUSE_SPIRV_KHR_INTEGER_DOT_PRODUCT=ON"
                              "-DUSE_LLVM=ON" "-DUSE_LIBBACKTRACE=OFF")
-         #:phases (modify-phases %standard-phases
-                    (delete 'check))))
+         #:tests? #f))
       (inputs (list vulkan-loader spirv-tools-upstream llvm-15 libffi))
       (native-inputs (list vulkan-headers spirv-headers-upstream))
       (home-page "https://tvm.apache.org/")
@@ -41,18 +41,19 @@
        "An End to End Machine Learning Compiler Framework for CPUs, GPUs and accelerators")
       (description
        "An End to End Machine Learning Compiler Framework for CPUs, GPUs and accelerators")
-      (license license:asl2.0))))
+      (license license:asl2.0)
+      (properties '((upstream-name . "apache-tvm-src"))))))
 
-(define-public python-synr
+(define python-synr
   (package
     (name "python-synr")
     (version "0.6.0")
-    (source (origin
-              (method url-fetch)
-              (uri (pypi-uri "synr" version))
-              (sha256
-               (base32
-                "0khyb7zbgry4x1asmsjjczc78vwm64x1awik3scf321r1jqickhb"))))
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "synr" version))
+       (sha256
+        (base32 "0khyb7zbgry4x1asmsjjczc78vwm64x1awik3scf321r1jqickhb"))))
     (build-system python-build-system)
     (propagated-inputs (list python-attrs))
     (home-page "")
@@ -60,15 +61,14 @@
     (description "This package provides a consistent AST for Python")
     (license #f)))
 
-
 (define-public python-tvm
   (package
     (inherit tvm)
     (name "python-tvm")
     (build-system python-build-system)
     (arguments
-     '(#:phases (modify-phases %standard-phases
-                  (delete 'check)
+     '(#:tests? #f
+       #:phases (modify-phases %standard-phases
                   (delete 'sanity-check) ;breaks because of homeless shelter
                   (add-after 'install 'install-configs
                     (lambda* (#:key outputs #:allow-other-keys)
@@ -78,8 +78,8 @@
                         (mkdir-p etc-configs)
                         (copy-recursively "../configs" etc-configs)
                         (wrap-program bin
-                                      `("TVM_CONFIGS_JSON_DIR" =
-                                        (,etc-configs))))))
+                          `("TVM_CONFIGS_JSON_DIR" =
+                            (,etc-configs))))))
                   (add-after 'unpack 'chdir-and-set-env
                     (lambda* (#:key inputs #:allow-other-keys)
                       (chdir "python")

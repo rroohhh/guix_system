@@ -26,8 +26,7 @@
   #:use-module (gnu packages wm)
   #:use-module (guix transformations)
   #:use-module (home hy3)
-  #:use-module (vup hwinfo)
-  #:use-module (vup linux))
+  #:use-module (vup hwinfo))
 
 (define extra-telegraf-config
   #~(string-append

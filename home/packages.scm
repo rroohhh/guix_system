@@ -1,35 +1,29 @@
 (define-module (home packages)
+  ;; #:use-module (local-packages)
   #:use-module (config sysprof)
+  #:use-module (config linux)
   #:use-module (vup patches)
-  #:use-module (gnu)
   #:use-module (guix packages)
   #:use-module (guix utils)
   #:use-module (guix gexp)
   #:use-module (guix git-download)
   #:use-module (guix build-system trivial)
   #:use-module (nongnu packages mozilla)
+  #:use-module (nongnu packages compression)
+  #:use-module (gnu)
   #:use-module ((gnu packages python-xyz) #:prefix guix:)
-  #:use-module ((gnu packages fpga) #:select (gtkwave))
 
   #:use-module (vup rust-nightly)
-  #:use-module (vup tmp)
   #:use-module (vup qt-apps)
-  #:use-module (vup root)
-  #:use-module (vup mesa)
-  #:use-module (vup linux)
   #:use-module (vup misc)
   #:use-module (vup fpga)
   #:use-module (vup go-xyz)
+  #:use-module (vup concourse)
   #:use-module ((vup python-xyz) #:prefix vup:)
   #:use-module (vup horizon)
-  #:use-module (vup unrar)
-  #:use-module (vup sioyek)
+  #:use-module ((vup sioyek) #:prefix vup:)
   #:use-module (vup atuin)
-  ;; #:use-module (vup docker)
-  #:use-module (vup x)
   #:use-module ((vup solvespace) #:prefix vup:)
-  ;; #:use-module (vup tmp)
-  #:use-module (vup concourse)
   #:use-module (vup rust-apps)
 
   #:use-module (home hy3)
@@ -208,7 +202,6 @@ exec ~a $@\n"
    sqlite
    jq
    xxd
-   mbuffer
    ; emacs-pgtk-native-comp
    emacs
    emacs-lsp-booster
@@ -251,7 +244,7 @@ exec ~a $@\n"
 
    fly
 
-   sioyek
+   vup:sioyek
    feh
    scrot
    grim
@@ -627,15 +620,6 @@ exec ~a $@\n"
    expat
    cereal
    pybind11
-
-   qtwayland-5
-   (list qtwayland-5 "debug")
-   qtsvg-5
-   (list qtsvg-5 "debug")
-   qtx11extras
-   (list qtx11extras "debug")
-   qtbase-5
-   (list qtbase-5 "debug")
 
    dbus
    libx11

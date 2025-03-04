@@ -25,20 +25,12 @@
   #:use-module (gnu services shepherd)
   #:use-module (gnu services desktop)
   #:use-module (gnu system setuid)
-  #:use-module (vup linux)
   #:use-module (vup hwinfo)
   #:use-module (config linux)
   ;; #:use-module (services cgroupv2)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26))
-
-(define-public docker-fixed
-  (package
-    (inherit docker)
-    (name "docker-fixed")
-    (arguments
-     (append `(#:tests? #f ,@(package-arguments docker))))))
 
 
 (define-public base-system-config

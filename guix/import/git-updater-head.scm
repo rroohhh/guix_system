@@ -19,7 +19,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with GNU Guix.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (guix import git-updater)
+(define-module (guix import git-updater-head)
   #:use-module (git)
   #:use-module (guix i18n)
   #:use-module (guix diagnostics)
@@ -132,7 +132,7 @@ Optionally include a VERSION string to fetch a specific version."
                                                             old-reference))))))))
 
 (define %generic-git-updater-head
-  (upstream-updater (name 'generic-git-head)
+  (upstream-updater (name 'git-head)
                     (description
                      "Updater for packages hosted on Git repositories to HEAD commit")
                     (pred git-package?)

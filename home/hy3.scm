@@ -46,11 +46,8 @@
         (base32
          "0ry1ylkblmilvha7hiag875qhlcf4pw1av7a4khf1w9pichy9lvs"))))
      (build-system cmake-build-system)
-     (native-inputs (list pkg-config gcc-13))
-     (arguments
-      '(#:phases
-         (modify-phases %standard-phases
-                        (delete 'check))))  ; no tests
+     (native-inputs (list pkg-config gcc-14))
+     (arguments '(#:tests? #f)) ; no tests
      (inputs (modify-inputs hyprland-inputs
                             (append hyprland-0.46)))
      (home-page "https://github.com/outfoxxed/hy3")

@@ -1,6 +1,5 @@
 (define-module (services zfs)
   #:use-module (ice-9 match)
-  #:use-module (vup linux)
   #:use-module (gnu services)
   #:use-module (gnu services base)
   #:use-module (gnu services linux)
@@ -37,10 +36,10 @@
             %zfs-zvol-dependency
             zfs-with-vup-kernel))
 
-(define-public zfs-2.2
+(define zfs-2.3
   (package
    (inherit zfs)
-   (version "2.2.6")
+   (version "2.3.0")
    (source
     (origin
      (patches (list "zfs_no_init_conf.patch"))
@@ -49,7 +48,7 @@
                          "/download/zfs-" version
                          "/zfs-" version ".tar.gz"))
      (sha256
-      (base32 "19x2a8k25i3y6nr7nx5aaqrpnp55vjmrw86p06zpgpf578804bn9"))))
+      (base32 "19jnjcpaknb8yf7zh7f36kmnb9m91ndzxwqpqfwwc92znpm8g1vf"))))
 
    (native-inputs (list autoconf automake libtool pkg-config clang-17 lld-17))
    (arguments
@@ -170,7 +169,7 @@
   ;; the OpenZFS package that will be modified to compile for the
   ;; given kernel.
   (base-zfs                   zfs-configuration-base-zfs
-                              (default zfs-2.2))
+                              (default zfs-2.3))
   ;; the zfs-auto-snapshot package that will be modified to compile
   ;; for the given kernel.
   (base-zfs-auto-snapshot     zfs-configuration-base-zfs-auto-snapshot
@@ -224,7 +223,7 @@
         (base-zfs-auto-snapshot (zfs-configuration-base-zfs-auto-snapshot conf)))
     (package
       (inherit base-zfs-auto-snapshot)
-      (inputs `(("zfs" ,zfs))))))
+      (inputs (list zfs)))))
 
 (define (zfs-shepherd-services conf)
   (let* ((zfs-package     (make-zfs-package conf))
@@ -316,7 +315,7 @@
 
 (define zfs-with-vup-kernel
   (package
-    (inherit zfs-2.2)
+    (inherit zfs-2.3)
     (arguments
       `(#:linux ,linux-nonfree/extra_config-x86
-        ,@(package-arguments zfs-2.2)))))
+        ,@(package-arguments zfs-2.3)))))
